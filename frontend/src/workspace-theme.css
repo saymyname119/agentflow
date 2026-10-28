@@ -1,0 +1,823 @@
+:root {
+  font-family: 'Inter', Arial, sans-serif;
+  --purple: #7e45e2;
+  --purple-dark: #6934cb;
+  --ink: #24242b;
+  --line: #e4e3e9;
+  background: #f4f4f6;
+  color: #29292f;
+}
+.app-shell {
+  background: #f4f4f6;
+  color: #29292f;
+}
+.app-shell h1,
+.app-shell h2,
+.app-shell h3 {
+  font-family: 'Inter', Arial, sans-serif;
+}
+.app-shell .sidebar {
+  background: #151518;
+  color: #aaa7b4;
+  border-right: 1px solid #2f2c36;
+}
+.app-shell .brand {
+  font-family: 'Inter', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.8px;
+}
+.app-shell .brand .brand-mark {
+  border-radius: 0;
+  background: linear-gradient(135deg, #ff604b, #cc3baf 50%, #823dff);
+  box-shadow: none;
+}
+.app-shell .brand small {
+  color: #a8a1b5;
+  font-size: 8px;
+}
+.app-shell .workspace-label {
+  background: #202024;
+  border-color: #39353f;
+  border-radius: 3px;
+}
+.app-shell .workspace-label strong {
+  color: #e3dfe9;
+}
+.app-shell .workspace-label small {
+  color: #958d9f;
+}
+.app-shell .workspace-avatar {
+  border-radius: 3px;
+  background: #3b2c50;
+  color: #dab9ff;
+}
+.app-shell .nav-label {
+  color: #7d748b;
+  font-size: 9px;
+}
+.app-shell .sidebar nav button {
+  border-radius: 3px;
+  color: #ada5bb;
+  font-size: 12px;
+}
+.app-shell .sidebar nav button.active {
+  background: #30253f;
+  color: #e1c8ff;
+  box-shadow: inset 3px 0 #bc75ff;
+}
+.app-shell .sidebar nav button:hover {
+  background: #26212f;
+  color: #eee2ff;
+}
+.app-shell .nav-count {
+  background: #7544a6;
+  color: #fff;
+  border-radius: 2px;
+}
+.app-shell .human-card {
+  border-radius: 3px;
+  background: #211c2b;
+  border-color: #3f304f;
+}
+.app-shell .human-card strong {
+  color: #e5d8f5;
+}
+.app-shell .human-card p {
+  color: #a398b2;
+}
+.app-shell .human-card button {
+  color: #c19bea;
+}
+.app-shell .profile {
+  border-color: #3b3245;
+}
+.app-shell .profile strong {
+  color: #ded3e9;
+}
+.app-shell .profile small {
+  color: #a193ad;
+}
+.app-shell .topbar {
+  background: #1d1b22;
+  border-color: #393240;
+}
+.app-shell .breadcrumbs {
+  color: #a298af;
+}
+.app-shell .breadcrumbs strong {
+  color: #e6ddf0;
+}
+.app-shell .breadcrumbs svg {
+  color: #80718f;
+}
+.app-shell .connection {
+  color: #b4a5c1;
+}
+.app-shell .connection i.connected {
+  box-shadow: none;
+  background: #c3f979;
+}
+.app-shell .mode-pill {
+  color: #d1b1ff;
+  background: #352447;
+  border-color: #543265;
+  border-radius: 3px;
+}
+.app-shell .mode-pill.live {
+  background: #24352a;
+  color: #bee3b0;
+  border-color: #3a5340;
+}
+.app-shell .topbar-divider {
+  background: #46374f;
+}
+.app-shell .topbar .icon-button {
+  color: #c0adc9;
+}
+.app-shell .top-avatar {
+  background: #554063;
+  color: #efdfff;
+  border-color: #725280;
+}
+.app-shell main {
+  padding-top: 24px;
+}
+.app-shell .demo-banner {
+  border-radius: 3px;
+  background: #eae5f2;
+  border-color: #dad0e9;
+  color: #786189;
+}
+.app-shell .demo-banner button {
+  color: #704990;
+}
+.app-shell .banner-extra {
+  color: #8a7598;
+}
+.app-shell .demo-dot {
+  background: #9d58db;
+}
+.app-shell .eyebrow {
+  font-family: 'JetBrains Mono', monospace;
+  color: #8e7b9d;
+  letter-spacing: 1.1px;
+}
+.app-shell h1 {
+  font-family: 'Inter', sans-serif;
+  font-size: 29px;
+  font-weight: 650;
+  letter-spacing: -1.2px;
+  color: #242029;
+}
+.app-shell .page-heading p {
+  font-size: 12px;
+  color: #7c6d89;
+}
+.app-shell .button {
+  border-radius: 20px;
+  font-size: 11px;
+  padding: 9px 15px;
+  min-height: 36px;
+  box-shadow: none;
+}
+.app-shell .button.primary {
+  background: #7f45dc;
+  border-color: #7f45dc;
+  color: #fff;
+}
+.app-shell .button.primary:hover:not(:disabled) {
+  background: #6631be;
+  border-color: #6631be;
+}
+.app-shell .button.secondary {
+  background: #fff;
+  color: #6b587a;
+  border-color: #d9d0e2;
+  box-shadow: none;
+}
+.app-shell .button.secondary:hover:not(:disabled) {
+  background: #f4eefb;
+  border-color: #a88ec1;
+}
+.app-shell .button.danger {
+  background: #b44165;
+  border-color: #b44165;
+  color: white;
+}
+.app-shell .metrics {
+  gap: 13px;
+}
+.app-shell .metric {
+  border-radius: 3px;
+  border-color: #ded9e5;
+  box-shadow: none;
+  background: #fff;
+  padding: 17px 18px;
+}
+.app-shell .metric-top {
+  color: #75617f;
+  font-size: 11px;
+}
+.app-shell .metric-icon {
+  border-radius: 3px;
+}
+.app-shell .metric > strong {
+  font-family: 'Inter', sans-serif;
+  font-size: 34px;
+  font-weight: 550;
+  color: #29222f;
+  letter-spacing: -1.4px;
+}
+.app-shell .metric > p {
+  font-size: 10px;
+  color: #94839e;
+}
+.app-shell .metric-icon.purple {
+  color: #975ed9;
+  background: #efe5fc;
+}
+.app-shell .metric-icon.green {
+  color: #66884b;
+  background: #edf4e7;
+}
+.app-shell .metric-icon.amber {
+  color: #ba842a;
+  background: #fff2dc;
+}
+.app-shell .metric-icon.rose {
+  color: #b25e7e;
+  background: #f9e7ef;
+}
+.app-shell .review-workspace {
+  border-radius: 4px;
+  box-shadow: none;
+  border-color: #dcd4e4;
+}
+.app-shell .section-title h2 {
+  font-size: 14px;
+  color: #51415f;
+  font-weight: 600;
+}
+.app-shell .section-title p {
+  color: #9a88a5;
+  font-size: 11px;
+}
+.app-shell .count-pill {
+  background: #ede6f5;
+  border-color: #e3d7ed;
+  color: #9a7daf;
+  border-radius: 3px;
+}
+.app-shell select {
+  border-color: #ded1e7;
+  color: #887191;
+  border-radius: 3px;
+}
+.app-shell .filters button {
+  color: #9b85aa;
+  font-size: 10px;
+  border-radius: 3px;
+}
+.app-shell .filters button.selected {
+  background: #28212f;
+  color: #e4d5f2;
+  border-color: #28212f;
+}
+.app-shell .filters button.selected span {
+  background: #5a3c72;
+  color: #e9d5fa;
+}
+.app-shell .search-box {
+  border-radius: 3px;
+  border-color: #e4dbea;
+}
+.app-shell .search-box input {
+  font-size: 10px;
+  color: #695574;
+}
+.app-shell .search-box input::placeholder {
+  color: #a48faf;
+}
+.app-shell .review-list {
+  background: #faf8fc;
+  border-color: #e4dbe9;
+}
+.app-shell .review-row {
+  border-bottom-color: #e9e1ef;
+}
+.app-shell .review-row.selected {
+  background: #f0e8fb;
+  border-left-color: #9c62dd;
+}
+.app-shell .review-row:hover {
+  background: #f4eefb;
+}
+.app-shell .review-row h3 {
+  color: #6b527d;
+  font-size: 12px;
+  font-weight: 500;
+}
+.app-shell .review-row.selected h3 {
+  color: #654383;
+}
+.app-shell .pr-number,
+.app-shell .row-meta,
+.app-shell .row-time {
+  color: #9e86af;
+}
+.app-shell .repo-short {
+  color: #b09ac0;
+}
+.app-shell .badge {
+  border-radius: 3px;
+  font-size: 9px;
+}
+.app-shell .badge.review {
+  background: #fff3dd;
+  color: #ae8539;
+  border-color: #f1dfb8;
+}
+.app-shell .badge.ready,
+.app-shell .badge.approved {
+  background: #eef4e5;
+  color: #7b994c;
+  border-color: #dee8ce;
+}
+.app-shell .badge.blocked,
+.app-shell .badge.rejected {
+  background: #fbeaf0;
+  color: #b5708b;
+  border-color: #f0d2de;
+}
+.app-shell .detail-repo {
+  color: #9c83ac;
+  font-size: 10px;
+}
+.app-shell .detail-title-line h2 {
+  font-size: 19px;
+  color: #624b74;
+  letter-spacing: -0.55px;
+  font-weight: 600;
+}
+.app-shell .detail-meta {
+  color: #ab94ba;
+  font-size: 10px;
+}
+.app-shell .detail-meta strong {
+  color: #9979ad;
+}
+.app-shell .commit-strip {
+  color: #ad91bd;
+  font-size: 9px;
+}
+.app-shell code,
+.app-shell kbd {
+  font-family: 'JetBrains Mono', monospace;
+}
+.app-shell .commit-strip code {
+  background: #f5effc;
+  color: #ab89c4;
+  font-size: 9px;
+}
+.app-shell .commit-pin {
+  color: #9ba77c;
+}
+.app-shell .detail-tabs {
+  border-bottom-color: #e8deef;
+}
+.app-shell .detail-tabs button {
+  font-size: 10px;
+  color: #b398c3;
+}
+.app-shell .detail-tabs button.active {
+  color: #9e6ac9;
+  border-bottom-color: #ac6ee2;
+}
+.app-shell .recommendation {
+  border-radius: 3px;
+}
+.app-shell .recommendation.review {
+  background: #fff9ef;
+  border-color: #f1e4cb;
+}
+.app-shell .recommendation.review h3 {
+  color: #ac874c;
+  font-size: 13px;
+}
+.app-shell .recommendation.review p {
+  color: #b5a080;
+  font-size: 11px;
+}
+.app-shell .recommendation-symbol {
+  border-radius: 3px;
+}
+.app-shell .recommendation.ready {
+  background: #f7faef;
+  border-color: #e4ebd5;
+}
+.app-shell .recommendation.ready h3 {
+  color: #829b59;
+}
+.app-shell .recommendation.ready p {
+  color: #a0ae87;
+}
+.app-shell .recommendation.blocked {
+  background: #fff4f8;
+  border-color: #f3dbe5;
+}
+.app-shell .recommendation.blocked h3 {
+  color: #b57790;
+}
+.app-shell .recommendation.blocked p {
+  color: #c19bab;
+}
+.app-shell .evidence-summary {
+  color: #b9a4c6;
+  font-size: 10px;
+  border-bottom-color: #f0e7f6;
+}
+.app-shell .evidence-summary strong {
+  color: #ad91be;
+}
+.app-shell .content-heading h3 {
+  color: #a081b2;
+  font-size: 12px;
+}
+.app-shell .content-heading > span {
+  color: #bfabd0;
+  font-size: 9px;
+}
+.app-shell .finding h4 {
+  color: #9d79b2;
+  font-size: 12px;
+}
+.app-shell .finding p {
+  color: #b69dc7;
+  font-size: 11px;
+}
+.app-shell .finding {
+  border-bottom-color: #f0e7f7;
+}
+.app-shell .file-chips button {
+  border-radius: 3px;
+  background: #fcf8ff;
+  border-color: #eee3f6;
+  color: #b69acb;
+  font-size: 10px;
+}
+.app-shell .policy-note {
+  border-radius: 3px;
+  background: #fbf7ff;
+  border-color: #f0e7f8;
+  color: #b79dc9;
+  font-size: 10px;
+}
+.app-shell .policy-note code {
+  color: #b291c6;
+}
+.app-shell .decision-footer {
+  background: #fff;
+  border-color: #ede2f5;
+}
+.app-shell .footer-guidance strong,
+.app-shell .resolved-summary strong {
+  color: #aa85bc;
+  font-size: 11px;
+}
+.app-shell .footer-guidance small,
+.app-shell .resolved-summary small {
+  color: #c0a8d0;
+  font-size: 10px;
+}
+.app-shell .page-footer {
+  color: #ab96bd;
+}
+.app-shell .file-row code,
+.app-shell .check-row strong {
+  color: #a985be;
+}
+.app-shell .file-row small,
+.app-shell .check-row small {
+  color: #bfa4cf;
+}
+.app-shell .timeline-event strong {
+  color: #aa84c0;
+}
+.app-shell .timeline-event small,
+.app-shell .timeline-event p {
+  color: #bca0ce;
+}
+.app-shell .info-card {
+  border-radius: 4px;
+  border-color: #e5d9ee;
+}
+.app-shell .card-title h2 {
+  color: #9e78b3;
+}
+.app-shell .card-title p,
+.app-shell .body-copy,
+.app-shell .experiment-limit {
+  color: #b89cc9;
+}
+.app-shell .evidence-disclosure {
+  border-radius: 3px;
+  background: #eee4fa;
+  border-color: #deccec;
+}
+.app-shell .evidence-disclosure strong {
+  color: #9d6cbe;
+}
+.app-shell .evidence-disclosure p {
+  color: #b291c7;
+}
+.app-shell .subtle-chip {
+  border-radius: 3px;
+}
+.app-shell .pattern-grid code {
+  background: #faf4ff;
+  color: #b690ce;
+  border-color: #f0e2f9;
+}
+.app-shell .modal {
+  border-radius: 7px;
+  border-color: #dfc9ee;
+}
+.app-shell .modal h2 {
+  font-family: 'Inter', sans-serif;
+  color: #9972ac;
+  font-weight: 550;
+}
+.app-shell .modal-subtitle,
+.app-shell .form-help,
+.app-shell .safe-action-note,
+.app-shell .guide-steps p {
+  color: #ba99cd;
+}
+.app-shell .modal label {
+  color: #ae85c1;
+}
+.app-shell .modal input,
+.app-shell .modal select,
+.app-shell .modal textarea {
+  border-radius: 4px;
+  border-color: #ead8f3;
+  color: #a27bb9;
+}
+.app-shell .modal .button {
+  border-radius: 22px;
+}
+.app-shell .modal-emblem {
+  border-radius: 4px;
+}
+.app-shell .modal-backdrop {
+  background: #110d1d9c;
+}
+.app-shell .safe-action-note {
+  border-radius: 4px;
+}
+.app-shell .demo-roles .field-label {
+  color: #aa85bf;
+}
+.app-shell .connected-account strong {
+  color: #ac82c4;
+}
+.app-shell .connected-account small {
+  color: #bf9ed2;
+}
+
+/* Clear working contrast inside the light editor surface. */
+.app-shell .page-heading p,
+.app-shell .metric-top,
+.app-shell .metric > p,
+.app-shell .section-title p,
+.app-shell .filters button,
+.app-shell .search-box input,
+.app-shell .row-meta,
+.app-shell .row-time,
+.app-shell .pr-number {
+  color: #79668a;
+}
+.app-shell .review-row h3,
+.app-shell .review-row.selected h3 {
+  color: #554363;
+}
+.app-shell .detail-title-line h2 {
+  color: #50365f;
+}
+.app-shell .detail-meta,
+.app-shell .detail-repo,
+.app-shell .commit-strip,
+.app-shell .detail-meta strong {
+  color: #897099;
+}
+.app-shell .detail-tabs button {
+  color: #8e719f;
+}
+.app-shell .detail-tabs button.active {
+  color: #8541b4;
+}
+.app-shell .recommendation.review h3 {
+  color: #8d692e;
+}
+.app-shell .recommendation.review p {
+  color: #9d855c;
+}
+.app-shell .recommendation.ready h3 {
+  color: #6e853e;
+}
+.app-shell .recommendation.ready p {
+  color: #8a9b69;
+}
+.app-shell .recommendation.blocked h3 {
+  color: #9c5878;
+}
+.app-shell .recommendation.blocked p {
+  color: #b08198;
+}
+.app-shell .finding h4 {
+  color: #8b5fa4;
+}
+.app-shell .finding p,
+.app-shell .file-chips button,
+.app-shell .policy-note,
+.app-shell .footer-guidance small,
+.app-shell .resolved-summary small {
+  color: #a07bb6;
+}
+.app-shell .footer-guidance strong,
+.app-shell .resolved-summary strong {
+  color: #9366a9;
+}
+.app-shell .file-row code,
+.app-shell .check-row strong,
+.app-shell .timeline-event strong {
+  color: #9365ad;
+}
+.app-shell .file-row small,
+.app-shell .check-row small,
+.app-shell .timeline-event small,
+.app-shell .timeline-event p {
+  color: #aa87bd;
+}
+.app-shell .card-title h2 {
+  color: #8f60a6;
+}
+.app-shell .card-title p,
+.app-shell .body-copy,
+.app-shell .experiment-limit,
+.app-shell .evidence-disclosure p {
+  color: #a47fba;
+}
+.app-shell .modal h2 {
+  color: #7b4c92;
+}
+.app-shell .modal-subtitle,
+.app-shell .form-help,
+.app-shell .safe-action-note,
+.app-shell .guide-steps p {
+  color: #a684b9;
+}
+.app-shell .modal label,
+.app-shell .modal input,
+.app-shell .modal textarea {
+  color: #9369aa;
+}
+@media (max-width: 1100px) {
+  .app-shell h1 {
+    font-size: 25px;
+  }
+  .app-shell .button {
+    font-size: 10px;
+    padding: 8px 12px;
+  }
+  .app-shell .metric-top {
+    font-size: 10px;
+  }
+  .app-shell .metric > p {
+    font-size: 9px;
+  }
+  .app-shell .metric > strong {
+    font-size: 31px;
+  }
+  .app-shell .review-row h3 {
+    font-size: 11px;
+  }
+  .app-shell .detail-title-line h2 {
+    font-size: 18px;
+  }
+}
+@media (max-width: 760px) {
+  .app-shell h1 {
+    font-size: 25px;
+    letter-spacing: -1px;
+  }
+  .app-shell .page-heading p {
+    font-size: 11px;
+  }
+  .app-shell .metric {
+    padding: 14px;
+  }
+  .app-shell .metric-top {
+    font-size: 10px;
+  }
+  .app-shell .metric > strong {
+    font-size: 29px;
+  }
+  .app-shell .metric > p {
+    font-size: 9px;
+  }
+  .app-shell .review-row.selected {
+    border-left-color: transparent;
+    border-bottom-color: #a365de;
+  }
+  .app-shell .topbar .mobile-menu {
+    color: #d8b5f1;
+  }
+  .app-shell .review-row h3 {
+    font-size: 12px;
+  }
+  .app-shell .detail-title-line h2 {
+    font-size: 19px;
+  }
+  .app-shell .detail-tabs button {
+    font-size: 10px;
+  }
+  .app-shell .recommendation.review h3 {
+    font-size: 12px;
+  }
+  .app-shell .recommendation p,
+  .app-shell .finding p {
+    font-size: 11px;
+  }
+  .app-shell .button {
+    font-size: 10px;
+    min-height: 35px;
+  }
+  .app-shell .evidence-metrics .metric > strong {
+    font-size: 26px;
+  }
+  .app-shell .demo-banner {
+    font-size: 9px;
+  }
+}
+/* Neutral editor typography; color is reserved for state and action. */
+.app-shell .review-row h3,
+.app-shell .review-row.selected h3,
+.app-shell .detail-title-line h2,
+.app-shell .section-title h2,
+.app-shell .finding h4,
+.app-shell .content-heading h3 {
+  color: #37313d;
+}
+.app-shell .finding p,
+.app-shell .detail-meta,
+.app-shell .detail-repo,
+.app-shell .detail-meta strong,
+.app-shell .row-meta,
+.app-shell .row-time,
+.app-shell .pr-number,
+.app-shell .metric-top,
+.app-shell .metric > p,
+.app-shell .section-title p {
+  color: #78717f;
+}
+.app-shell .file-chips button,
+.app-shell .policy-note,
+.app-shell .footer-guidance small,
+.app-shell .resolved-summary small,
+.app-shell .file-row small,
+.app-shell .check-row small,
+.app-shell .timeline-event small,
+.app-shell .timeline-event p {
+  color: #8c7c96;
+}
+.app-shell .footer-guidance strong,
+.app-shell .resolved-summary strong,
+.app-shell .file-row code,
+.app-shell .check-row strong,
+.app-shell .timeline-event strong,
+.app-shell .card-title h2 {
+  color: #5e486d;
+}
+.app-shell .card-title p,
+.app-shell .body-copy,
+.app-shell .experiment-limit,
+.app-shell .evidence-disclosure p {
+  color: #8c7799;
+}
+.app-shell .modal h2 {
+  color: #45334e;
+}
+.app-shell .modal-subtitle,
+.app-shell .form-help,
+.app-shell .safe-action-note,
+.app-shell .guide-steps p {
+  color: #8c769a;
+}
+.app-shell .modal label,
+.app-shell .modal input,
+.app-shell .modal textarea {
+  color: #70577f;
+}

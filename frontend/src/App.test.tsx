@@ -256,3 +256,39 @@ test('repeated analysis keeps the newest snapshot in the inbox without discardin
     fresh = decision('fresh', 142, 'BLOCKED');
   expect(latestDecisions([fresh, old])).toEqual([fresh]);
 });
+
+test('product overview opens the functioning review workspace', async () => {
+  server();
+  window.history.replaceState(null, '', '/');
+  render(<App />);
+  const user = userEvent.setup();
+  expect(screen.getByRole('heading', { name: /Your next merge/ })).toBeVisible();
+  await user.click(screen.getByRole('button', { name: 'Open review workspace' }));
+  await screen.findByRole('heading', { name: 'Why this recommendation?' });
+  expect(window.location.hash).toBe('#/workspace');
+});
+
+test('product preview switches to actual check evidence and results link opens measurements', async () => {
+  server();
+  window.history.replaceState(null, '', '/');
+  render(<App />);
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('tab', { name: 'CI evidence' }));
+  expect(await screen.findByRole('tabpanel', { name: 'CI evidence preview' })).toHaveTextContent(
+    'GitHub app 15368',
+  );
+  await user.click(screen.getByRole('button', { name: 'Inspect the full results' }));
+  expect(await screen.findByText('Measured locally. Scoped honestly.')).toBeVisible();
+});
+
+test('opening a pull request from the product preview selects that request', async () => {
+  server();
+  window.history.replaceState(null, '', '/');
+  render(<App />);
+  const user = userEvent.setup();
+  const request = await screen.findByRole('button', { name: /#143 Ready Improve setup guide/ });
+  await user.click(request);
+  expect(
+    await screen.findByRole('heading', { name: 'Ready for your final sign-off.' }),
+  ).toBeVisible();
+});

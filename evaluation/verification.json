@@ -19,10 +19,11 @@
     }
   },
   "frontend": {
-    "tests": 9,
-    "passed": 9,
+    "tests": 12,
+    "passed": 12,
     "failed": 0,
-    "scope": "JSDOM behavior tests with simulated API responses"
+    "scope": "JSDOM behavior tests with simulated API responses, including product navigation and request selection",
+    "verified_at": "2026-10-28T09:15:36.271804+00:00"
   },
   "browser_checks": {
     "desktop": "Default browser viewport",

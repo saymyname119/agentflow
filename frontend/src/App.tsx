@@ -37,10 +37,22 @@ import {
 import { Badge, Mark, Metric, ModalFrame } from './components';
 import { PolicyPage, EvidencePage } from './pages';
 import ReviewPanel from './ReviewPanel';
+import ProductPage from './ProductPage';
 
 type View = 'inbox' | 'history' | 'policy' | 'evidence';
 type Modal = 'connect' | 'queue' | 'approve' | 'reject' | 'publish' | 'guide' | null;
 export default function App() {
+  const [productPage, setProductPage] = useState(!window.location.hash.startsWith('#/workspace'));
+  useEffect(() => {
+    document.title = productPage
+      ? 'ApprovalFlow — Evidence-first code reviews'
+      : 'ApprovalFlow — Review workspace';
+  }, [productPage]);
+  useEffect(() => {
+    const updateRoute = () => setProductPage(!window.location.hash.startsWith('#/workspace'));
+    window.addEventListener('hashchange', updateRoute);
+    return () => window.removeEventListener('hashchange', updateRoute);
+  }, []);
   const [config, setConfig] = useState<AppConfig | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [token, setToken] = useState('');
@@ -335,16 +347,34 @@ export default function App() {
     session?.publication_enabled &&
     active.audit?.some((e) => e.action === 'approve' && e.actor === session.actor);
 
+  if (productPage)
+    return (
+      <ProductPage
+        records={latest}
+        demo={!!config?.demo}
+        loading={booting}
+        onOpenWorkspace={(next = 'inbox', decisionId) => {
+          navigate(next);
+          if (decisionId) setSelected(decisionId);
+          setProductPage(false);
+          window.location.hash = '/workspace';
+          window.scrollTo(0, 0);
+        }}
+      />
+    );
+
   return (
     <div className="app-shell">
       {menu && <div className="sidebar-scrim" onClick={() => setMenu(false)} />}
       <aside className={`sidebar ${menu ? 'open' : ''}`}>
         <a
           className="brand"
-          href="#"
+          href="#overview"
           onClick={(e) => {
             e.preventDefault();
-            navigate('inbox');
+            setProductPage(true);
+            window.location.hash = 'overview';
+            window.scrollTo(0, 0);
           }}
         >
           <Mark />

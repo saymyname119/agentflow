@@ -6,7 +6,7 @@ Passing tests alone does not tell a reviewer whether a change touches payment lo
 
 ## Before recording or presenting
 
-Run the local demo with `approvalflow demo` after building the frontend. Open `http://127.0.0.1:8000`. The sample repository and PRs are fixtures, labeled as a demo. No GitHub account or model API key is needed. Restarting creates a fresh session.
+Run the local demo with `approvalflow demo` after building the frontend. Open `http://127.0.0.1:8000`, then choose **Open review workspace** (or go directly to `/#/workspace`). The sample repository and PRs are fixtures, labeled as a demo. No GitHub account or model API key is needed. Restarting creates a fresh session.
 
 ## Show the workflow
 

@@ -4,6 +4,10 @@ An explainable GitHub pull-request approval agent built with **React, TypeScript
 
 The React console includes a searchable review inbox, commit-bound CI evidence, risk explanations, file metadata, reason-required decisions, activity history, a trusted-policy view, and a page explaining the measured results. A fixture-backed demo runs the real policy, database and decision code without GitHub credentials.
 
+![ApprovalFlow product overview](docs/product-overview.png)
+
+The product overview introduces the workflow and its measured results. **Open review workspace** enters the functioning console; it is also available directly at `/#/workspace`.
+
 ![ApprovalFlow review workspace](docs/review-workspace.png)
 
 **Small architecture:** one service, one worker from the same package, one database. No Redis, vector database, microservices or agent framework.
@@ -16,7 +20,7 @@ The creation environment is ready to run. From this directory:
 ..\.venv\Scripts\python.exe -m approvalflow.cli demo
 ```
 
-Open **http://127.0.0.1:8000**. The demo signs in automatically as a sample reviewer. Approve or reject a review with a reason, then inspect its Activity tab. Use the account menu to switch to sample operator access and queue PR #142–#149. Switch back to reviewer access to decide on the fresh recommendation.
+Open **http://127.0.0.1:8000** and choose **Open review workspace**. The demo signs in automatically as a sample reviewer. Approve or reject a review with a reason, then inspect its Activity tab. Use the account menu to switch to sample operator access and queue PR #142–#149. Switch back to reviewer access to decide on the fresh recommendation.
 
 This is a local demo, not a deployed GitHub integration. Every restart creates a separate SQLite fixture database under ignored `.demo/`. Demo credentials authorize only that demo service; publication is disabled even if the live-mode environment enables it. No real GitHub requests are made. To start over, stop the server and run the command again.
 
