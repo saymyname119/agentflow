@@ -1,0 +1,10 @@
+{
+  "repository": "example/project",
+  "number": 7,
+  "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+  "base_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb",
+  "author": "contributor",
+  "mergeable": true,
+  "files": [{"filename": "README.md", "additions": 1, "deletions": 1, "patch": "@@ -1 +1 @@\n-old instructions\n+clearer instructions"}],
+  "checks": [{"name": "test", "app_id": 15368, "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"}]
+}

@@ -1,0 +1,426 @@
+{
+  "generated_at": "2026-10-28T07:48:41.832320+00:00",
+  "dataset": "40 hand-authored synthetic scenarios",
+  "limitations": "Policy regression fixtures authored with the implementation, not an independent or real-world safety benchmark. Timing measures the in-process policy function only; excludes GitHub, HTTP, database and queue time.",
+  "python": "3.12.14",
+  "platform": "Windows-11-10.0.26300-SP0",
+  "policy_version": "2026-10-28.1",
+  "cases": 40,
+  "expected_distribution": {
+    "READY": 9,
+    "REVIEW": 17,
+    "BLOCKED": 14
+  },
+  "matching_expected": 40,
+  "unsafe_cases": 31,
+  "baseline_unsafe_ready": 26,
+  "agent_unsafe_ready": 0,
+  "agent_false_escalations": 0,
+  "latency": {
+    "samples": 2000,
+    "p50_ms": 0.0875,
+    "p95_ms": 0.2164
+  },
+  "results": [
+    {
+      "id": "docs-fix",
+      "expected": "READY",
+      "actual": "READY",
+      "baseline": "READY",
+      "why": "Small documentation edit with passing trusted CI",
+      "finding_codes": [
+        "low_risk"
+      ]
+    },
+    {
+      "id": "css-fix",
+      "expected": "READY",
+      "actual": "READY",
+      "baseline": "READY",
+      "why": "Small style-only edit",
+      "finding_codes": [
+        "low_risk"
+      ]
+    },
+    {
+      "id": "test-addition",
+      "expected": "READY",
+      "actual": "READY",
+      "baseline": "READY",
+      "why": "Adds tests without touching source",
+      "finding_codes": [
+        "low_risk"
+      ]
+    },
+    {
+      "id": "python-with-tests",
+      "expected": "READY",
+      "actual": "READY",
+      "baseline": "READY",
+      "why": "Source and same-module test updated",
+      "finding_codes": [
+        "low_risk"
+      ]
+    },
+    {
+      "id": "typescript-with-tests",
+      "expected": "READY",
+      "actual": "READY",
+      "baseline": "READY",
+      "why": "Source and same-module test updated",
+      "finding_codes": [
+        "low_risk"
+      ]
+    },
+    {
+      "id": "go-with-tests",
+      "expected": "READY",
+      "actual": "READY",
+      "baseline": "READY",
+      "why": "Source and same-module test updated",
+      "finding_codes": [
+        "low_risk"
+      ]
+    },
+    {
+      "id": "unrelated-ci-failure",
+      "expected": "READY",
+      "actual": "READY",
+      "baseline": "READY",
+      "why": "Only explicitly required checks gate readiness",
+      "finding_codes": [
+        "low_risk"
+      ]
+    },
+    {
+      "id": "remove-docs",
+      "expected": "READY",
+      "actual": "READY",
+      "baseline": "READY",
+      "why": "Documentation removal has no configured risk signal",
+      "finding_codes": [
+        "low_risk"
+      ]
+    },
+    {
+      "id": "auth-change",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Authentication changes need human judgment",
+      "finding_codes": [
+        "sensitive_paths"
+      ]
+    },
+    {
+      "id": "payment-change",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Payment logic affects money",
+      "finding_codes": [
+        "sensitive_paths"
+      ]
+    },
+    {
+      "id": "migration",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Schema changes can affect existing data",
+      "finding_codes": [
+        "sensitive_paths"
+      ]
+    },
+    {
+      "id": "workflow-change",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "CI controls cannot approve their own changes",
+      "finding_codes": [
+        "sensitive_paths"
+      ]
+    },
+    {
+      "id": "dependency-change",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Dependency updates require review",
+      "finding_codes": [
+        "sensitive_paths"
+      ]
+    },
+    {
+      "id": "lockfile-change",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Resolved dependencies change",
+      "finding_codes": [
+        "sensitive_paths"
+      ]
+    },
+    {
+      "id": "terraform-change",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Infrastructure changes need human judgment",
+      "finding_codes": [
+        "sensitive_paths"
+      ]
+    },
+    {
+      "id": "source-without-tests",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "No corresponding test update",
+      "finding_codes": [
+        "test_gap"
+      ]
+    },
+    {
+      "id": "unrelated-test",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Unrelated tests are not supporting evidence",
+      "finding_codes": [
+        "test_gap"
+      ]
+    },
+    {
+      "id": "deleted-tests",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Deleting tests reduces verification",
+      "finding_codes": [
+        "test_removal"
+      ]
+    },
+    {
+      "id": "renamed-tests",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Renaming tests to docs removes executable verification",
+      "finding_codes": [
+        "test_removal"
+      ]
+    },
+    {
+      "id": "sensitive-rename",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Original sensitive filename still matters",
+      "finding_codes": [
+        "sensitive_paths"
+      ]
+    },
+    {
+      "id": "large-diff",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Large changes need closer inspection",
+      "finding_codes": [
+        "large_change"
+      ]
+    },
+    {
+      "id": "binary-file",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Binary contents cannot be inspected",
+      "finding_codes": [
+        "missing_patch"
+      ]
+    },
+    {
+      "id": "truncated-patch",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Incomplete patch is insufficient evidence",
+      "finding_codes": [
+        "missing_patch"
+      ]
+    },
+    {
+      "id": "dynamic-execution",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Dynamic code execution needs human inspection",
+      "finding_codes": [
+        "risky_operation"
+      ]
+    },
+    {
+      "id": "destructive-sql",
+      "expected": "REVIEW",
+      "actual": "REVIEW",
+      "baseline": "READY",
+      "why": "Destructive data operation needs human inspection",
+      "finding_codes": [
+        "risky_operation"
+      ]
+    },
+    {
+      "id": "failed-ci",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "BLOCKED",
+      "why": "Required CI failed",
+      "finding_codes": [
+        "required_ci"
+      ]
+    },
+    {
+      "id": "pending-ci",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "BLOCKED",
+      "why": "CI has not finished",
+      "finding_codes": [
+        "required_ci"
+      ]
+    },
+    {
+      "id": "skipped-ci",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "BLOCKED",
+      "why": "Skipped is not successful verification",
+      "finding_codes": [
+        "required_ci"
+      ]
+    },
+    {
+      "id": "spoofed-ci-app",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "READY",
+      "why": "Correct check name from the wrong producer",
+      "finding_codes": [
+        "required_ci"
+      ]
+    },
+    {
+      "id": "stale-ci",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "READY",
+      "why": "Success belongs to another commit",
+      "finding_codes": [
+        "required_ci"
+      ]
+    },
+    {
+      "id": "missing-ci",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "BLOCKED",
+      "why": "No required verification exists",
+      "finding_codes": [
+        "required_ci"
+      ]
+    },
+    {
+      "id": "draft-pr",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "READY",
+      "why": "Author has not marked the change ready",
+      "finding_codes": [
+        "not_ready"
+      ]
+    },
+    {
+      "id": "closed-pr",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "READY",
+      "why": "Closed changes cannot be approved",
+      "finding_codes": [
+        "not_ready"
+      ]
+    },
+    {
+      "id": "merge-conflict",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "READY",
+      "why": "GitHub reports a conflict",
+      "finding_codes": [
+        "mergeability"
+      ]
+    },
+    {
+      "id": "unknown-mergeability",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "READY",
+      "why": "GitHub has not computed mergeability",
+      "finding_codes": [
+        "mergeability"
+      ]
+    },
+    {
+      "id": "incomplete-file-list",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "READY",
+      "why": "Some changed files may hide risks",
+      "finding_codes": [
+        "incomplete_files"
+      ]
+    },
+    {
+      "id": "empty-file-list",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "READY",
+      "why": "No inspectable change evidence",
+      "finding_codes": [
+        "incomplete_files"
+      ]
+    },
+    {
+      "id": "private-key",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "READY",
+      "why": "New credential material cannot be cleared",
+      "finding_codes": [
+        "secret_material"
+      ]
+    },
+    {
+      "id": "repository-injection",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "baseline": "BLOCKED",
+      "why": "Repository text cannot bypass failed CI",
+      "finding_codes": [
+        "required_ci"
+      ]
+    },
+    {
+      "id": "secret-deletion",
+      "expected": "READY",
+      "actual": "READY",
+      "baseline": "READY",
+      "why": "Removed credential marker is not newly exposed",
+      "finding_codes": [
+        "low_risk"
+      ]
+    }
+  ]
+}

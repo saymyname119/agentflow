@@ -1,0 +1,40 @@
+{
+  "verified_at": "2026-10-28T07:48:40.389786+00:00",
+  "version": "0.2.0",
+  "python": "3.12.14",
+  "suites": {
+    "sqlite": {
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "119",
+      "time": "14.629"
+    },
+    "postgres": {
+      "errors": "0",
+      "failures": "0",
+      "skipped": "0",
+      "tests": "119",
+      "time": "23.637"
+    }
+  },
+  "frontend": {
+    "tests": 9,
+    "passed": 9,
+    "failed": 0,
+    "scope": "JSDOM behavior tests with simulated API responses"
+  },
+  "browser_checks": {
+    "desktop": "Default browser viewport",
+    "phone": "390x844; no horizontal page overflow",
+    "approval_and_audit": "Verified with the fixture-backed API",
+    "queue_to_recommendation": "Verified with the fixture-backed API"
+  },
+  "postgresql_version": "18.6",
+  "github_integration": "MockTransport adapter, signed webhook and optional publication tests; no live repository integration or remote approval was executed",
+  "docker": "Multistage frontend/Python configuration supplied; Docker daemon was not running",
+  "ci": "Frontend and two-database workflow supplied; remote GitHub Actions has not run",
+  "warnings": [
+    "Starlette warns that its httpx-based TestClient is deprecated; all backend tests passed"
+  ]
+}

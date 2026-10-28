@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.pytest_cache/
+*.egg-info/
+*.db
+.env
+.deps/
+.test-tmp/
+evaluation/test-results*.xml
+.demo/
+frontend/node_modules/
+frontend/dist/
+frontend/coverage/
+approvalflow/web/

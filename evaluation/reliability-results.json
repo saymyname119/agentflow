@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-10-28T07:09:31.057499+00:00",
+  "database": "postgresql",
+  "database_version": [
+    18,
+    6
+  ],
+  "duplicate_delivery_attempts": 1000,
+  "delivery_concurrency": 16,
+  "jobs_created": 1,
+  "approval_races": 100,
+  "reviewers_per_race": 32,
+  "successful_resolutions": 100,
+  "approval_audit_events": 100,
+  "conflicting_resolutions_prevented": 3100,
+  "simulated_restarts": 20,
+  "jobs_recovered": 20,
+  "elapsed_seconds": 22.659,
+  "scope": "Synthetic contention and engine-restart/expired-lease experiments. Not OS kill, network partition or production load tests."
+}

@@ -1,0 +1,6 @@
+{
+  "version": "2026-10-28.1",
+  "required_checks": [{"name": "test", "app_id": 15368}],
+  "max_lines": 300,
+  "max_files": 15
+}

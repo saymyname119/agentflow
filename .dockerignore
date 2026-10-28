@@ -1,0 +1,12 @@
+.git
+.env
+.venv
+.test-tmp
+__pycache__
+.pytest_cache
+*.db
+frontend/node_modules
+frontend/dist
+frontend/coverage
+.demo
+approvalflow/web
