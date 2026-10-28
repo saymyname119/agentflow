@@ -9,6 +9,62 @@ from approvalflow.service import process_one
 from approvalflow.storage import jobs
 
 
+def test_expired_worker_cannot_save_visible_recommendation(store, snapshot, policy):
+    store.enqueue(uuid.uuid4().hex, "example/project", 7)
+    class Gateway:
+        def snapshot(self, *_):
+            with store.engine.begin() as db:
+                db.execute(update(jobs).where(jobs.c.status == "running").values(lease_until=0))
+            assert store.claim() is not None  # A replacement worker owns the job now.
+            return snapshot
+    assert process_one(store, Gateway(), policy)
+    assert store.recent() == []
+
+
+def test_completion_failure_rolls_back_record_audit_and_job(store, snapshot, policy, monkeypatch):
+    store.enqueue(uuid.uuid4().hex, "example/project", 7)
+    job = store.claim()
+    original = store._record
+    def fail_after_record(*args, **kwargs):
+        original(*args, **kwargs)
+        raise RuntimeError("Simulated database transaction failure")
+    monkeypatch.setattr(store, "_record", fail_after_record)
+    import pytest
+    with pytest.raises(RuntimeError):
+        store.complete(job, snapshot, evaluate(snapshot, policy), policy)
+    assert store.recent() == []
+    assert store.job(job["id"])["status"] == "running"
+
+
+def test_idempotency_key_cannot_alias_changed_evidence(store, snapshot, policy):
+    import pytest
+    key = uuid.uuid4().hex
+    store.record(snapshot, evaluate(snapshot, policy), policy, key)
+    snapshot.head_sha = "c" * 40
+    with pytest.raises(ValueError, match="different evidence"):
+        store.record(snapshot, evaluate(snapshot, policy), policy, key)
+
+
+def test_database_outage_while_claiming_does_not_kill_worker(store, policy, monkeypatch):
+    from sqlalchemy.exc import OperationalError
+    def unavailable():
+        raise OperationalError("SELECT", {}, RuntimeError("database temporarily down"))
+    monkeypatch.setattr(store, "claim", unavailable)
+    assert process_one(store, object(), policy) is False
+
+
+def test_database_outage_while_marking_retry_does_not_kill_worker(store, policy, monkeypatch):
+    from sqlalchemy.exc import OperationalError
+    store.enqueue(uuid.uuid4().hex, "example/project", 7)
+    class Gateway:
+        def snapshot(self, *_):
+            raise TimeoutError()
+    def unavailable(*_, **__):
+        raise OperationalError("UPDATE", {}, RuntimeError("database temporarily down"))
+    monkeypatch.setattr(store, "finish", unavailable)
+    assert process_one(store, Gateway(), policy)
+
+
 def test_duplicate_delivery_is_one_job(store):
     delivery = uuid.uuid4().hex
     with ThreadPoolExecutor(max_workers=8) as pool:

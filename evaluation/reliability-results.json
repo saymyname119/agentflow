@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-28T07:09:31.057499+00:00",
+  "generated_at": "2026-10-28T09:54:04.054182+00:00",
   "database": "postgresql",
   "database_version": [
     18,
@@ -15,6 +15,7 @@
   "conflicting_resolutions_prevented": 3100,
   "simulated_restarts": 20,
   "jobs_recovered": 20,
-  "elapsed_seconds": 22.659,
+  "expired_worker_recommendations_prevented": 20,
+  "elapsed_seconds": 62.986,
   "scope": "Synthetic contention and engine-restart/expired-lease experiments. Not OS kill, network partition or production load tests."
 }

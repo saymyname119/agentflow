@@ -4,6 +4,7 @@ import re
 from pathlib import PurePosixPath
 
 from .models import Finding, Policy, Recommendation, Snapshot
+from .patches import added_lines
 
 SOURCE_SUFFIXES = {".py", ".js", ".jsx", ".ts", ".tsx", ".go", ".java", ".rs", ".cpp", ".c"}
 SECRET = re.compile(r"(?:AKIA[0-9A-Z]{16}|-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----|gh[pousr]_[A-Za-z0-9]{30,})")
@@ -51,12 +52,15 @@ def evaluate(snapshot: Snapshot, policy: Policy) -> Recommendation:
     lines = sum(f.additions + f.deletions for f in snapshot.files)
     if lines > policy.max_lines or len(snapshot.files) > policy.max_files:
         add("large_change", "Change exceeds the configured review size limit.", "review")
-    sensitive, deleted_tests, missing_patch, secrets, risky_operations = [], [], [], [], []
+    sensitive, deleted_tests, missing_patch, secrets, risky_operations, renamed_source = [], [], [], [], [], []
     source_files, test_keys = [], set()
     for file in snapshot.files:
         paths = [file.filename] + ([file.previous_filename] if file.previous_filename else [])
         if any(matches(path, pattern) for path in paths for pattern in policy.sensitive_patterns):
             sensitive.append(file.filename)
+        if (file.previous_filename and not is_test(file.previous_filename)
+                and PurePosixPath(file.previous_filename).suffix.lower() in SOURCE_SUFFIXES):
+            renamed_source.append(file.filename)
         if is_test(file.filename):
             if file.status == "removed" or (file.deletions > 0 and file.additions == 0):
                 deleted_tests.append(file.filename)
@@ -67,10 +71,9 @@ def evaluate(snapshot: Snapshot, policy: Policy) -> Recommendation:
         elif PurePosixPath(file.filename).suffix.lower() in SOURCE_SUFFIXES:
             source_files.append(file.filename)
         # Binary files, omitted or truncated patches cannot be treated as inspected.
-        if file.patch is None or "... diff too large ..." in (file.patch or ""):
+        if file.patch is None or not file.patch_complete or "... diff too large ..." in (file.patch or ""):
             missing_patch.append(file.filename)
-        added = "\n".join(line[1:] for line in (file.patch or "").splitlines()
-                          if line.startswith("+") and not line.startswith("+++"))
+        added = "\n".join(added_lines(file.patch))
         if SECRET.search(added):
             secrets.append(file.filename)
         if not is_test(file.filename) and RISKY_OPERATION.search(added):
@@ -85,6 +88,8 @@ def evaluate(snapshot: Snapshot, policy: Policy) -> Recommendation:
         add("secret_material", "Added lines resemble credentials; inspect and rotate any real secret.", "block", secrets)
     if risky_operations:
         add("risky_operation", "Added lines contain dynamic execution or destructive data operations; inspect their intent.", "review", risky_operations)
+    if renamed_source:
+        add("source_rename", "Renamed source files require review of their original and new roles.", "review", renamed_source)
     uncovered = [p for p in source_files if module_key(p) not in test_keys]
     if uncovered:
         add("test_gap", "Source changes lack a same-module test update. This is a naming heuristic, not coverage proof.", "review", uncovered)

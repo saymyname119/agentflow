@@ -30,7 +30,7 @@ def main():
     with ThreadPoolExecutor(max_workers=16) as pool:
         inserted = sum(pool.map(lambda _: store.enqueue(delivery, snapshot.repository, snapshot.number), range(1000)))
     job = store.claim()
-    assert job["id"] == delivery and store.finish(job, decision_id="dedup-experiment")
+    assert job["id"] == delivery and store.complete(job, snapshot, recommendation, policy)
     winners, events = 0, 0
     with ThreadPoolExecutor(max_workers=32) as pool:
         for _ in range(100):
@@ -49,8 +49,8 @@ def main():
         store = Store(url)
         replacement = store.claim()
         assert replacement["id"] == key and replacement["attempts"] == 2
-        assert not store.finish(abandoned, decision_id="stale")
-        assert store.finish(replacement, decision_id="recovered")
+        assert store.complete(abandoned, snapshot, recommendation, policy) is None
+        assert store.complete(replacement, snapshot, recommendation, policy)
         recovered += 1
     assert inserted == 1 and winners == events == 100 and recovered == 20
     report = {
@@ -60,6 +60,7 @@ def main():
         "approval_races": 100, "reviewers_per_race": 32, "successful_resolutions": winners,
         "approval_audit_events": events, "conflicting_resolutions_prevented": 3200 - winners,
         "simulated_restarts": 20, "jobs_recovered": recovered,
+        "expired_worker_recommendations_prevented": 20,
         "elapsed_seconds": round(time.perf_counter() - started, 3),
         "scope": "Synthetic contention and engine-restart/expired-lease experiments. Not OS kill, network partition or production load tests."
     }

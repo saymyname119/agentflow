@@ -74,6 +74,26 @@ def test_changed_commit_prevents_publication(publisher, store, snapshot):
     assert gateway.calls == 0
 
 
+def test_superseded_approval_cannot_be_published(publisher, store, snapshot, policy):
+    client, gateway, old = publisher
+    approve(store, old)
+    current = store.record(snapshot, evaluate(snapshot, policy), policy)
+    assert store.resolve(current, 1, "maintainer", "reject", "This newer review rejects the change")
+    assert publish(client, old).status_code == 409
+    assert gateway.calls == 0
+
+
+def test_review_superseded_during_refresh_cannot_reserve_publication(publisher, store, snapshot, policy, monkeypatch):
+    client, gateway, old = publisher
+    approve(store, old)
+    def refreshed(*_):
+        store.record(snapshot, evaluate(snapshot, policy), policy)
+        return snapshot
+    monkeypatch.setattr(gateway, "snapshot", refreshed)
+    assert publish(client, old).status_code == 409
+    assert gateway.calls == 0
+
+
 def test_timeout_is_uncertain_and_never_automatically_retried(publisher, store):
     client, gateway, key = publisher
     approve(store, key)

@@ -28,6 +28,37 @@ def test_fetch_normalizes_github_evidence(snapshot):
     assert adapter(handler).snapshot(snapshot.repository, snapshot.number) == snapshot
 
 
+def test_silent_truncation_is_not_treated_as_inspected_evidence(snapshot):
+    def handler(request):
+        if request.url.path.endswith("/files"):
+            file = snapshot.files[0].model_dump()
+            file.update(additions=10, deletions=0, patch="@@ -0,0 +1,10 @@\n+only one visible line")
+            return httpx.Response(200, json=[file])
+        if request.url.path.endswith("/check-runs"):
+            return httpx.Response(200, json={"check_runs": []})
+        return httpx.Response(200, json=pr(snapshot))
+    file = adapter(handler).snapshot(snapshot.repository, snapshot.number).files[0]
+    assert file.patch_complete is False
+    assert "only one visible line" in file.patch
+
+
+def test_visible_secret_in_incomplete_patch_still_blocks(snapshot, policy):
+    from approvalflow.policy import evaluate
+    def handler(request):
+        if request.url.path.endswith("/files"):
+            file = snapshot.files[0].model_dump()
+            file.update(additions=10, deletions=0, patch="@@ -0,0 +1,10 @@\n+AKIA" + "A" * 16)
+            return httpx.Response(200, json=[file])
+        if request.url.path.endswith("/check-runs"):
+            c = snapshot.checks[0].model_dump()
+            c["app"] = {"id": c.pop("app_id")}
+            return httpx.Response(200, json={"check_runs": [c]})
+        return httpx.Response(200, json=pr(snapshot))
+    result = evaluate(adapter(handler).snapshot(snapshot.repository, snapshot.number), policy)
+    assert result.outcome == "BLOCKED"
+    assert {f.code for f in result.findings} >= {"missing_patch", "secret_material"}
+
+
 def test_paginated_files_do_not_stop_at_first_page():
     seen = []
     def handler(request):

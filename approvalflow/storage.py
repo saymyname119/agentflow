@@ -4,9 +4,12 @@ import time
 import uuid
 
 from sqlalchemy import (Column, Float, Integer, MetaData, String, Table, Text,
-                        and_, create_engine, event, or_, select, update)
+                        and_, create_engine, event, func, or_, select, update)
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.engine import make_url
+from sqlalchemy.dialects.sqlite import insert as sqlite_insert
+from sqlalchemy.dialects.postgresql import insert as postgres_insert
+from .versions import POLICY_ENGINE_VERSION
 
 metadata = MetaData()
 jobs = Table("jobs", metadata,
@@ -30,11 +33,20 @@ audit = Table("audit", metadata,
 publications = Table("publications", metadata,
     Column("decision_id", String(64), primary_key=True), Column("state", String(24), nullable=False),
     Column("review_id", String(64)), Column("url", Text), Column("error", String(64)))
+review_heads = Table("review_heads", metadata,
+    Column("repository", String(256), primary_key=True), Column("number", Integer, primary_key=True),
+    Column("decision_id", String(64)))
 
 
 def fingerprint(snapshot, policy):
     # Hash patches for change detection; do not persist raw source or credentials.
-    data = {"snapshot": snapshot.model_dump(mode="json"), "policy": policy.model_dump(mode="json")}
+    data = {"engine_version": POLICY_ENGINE_VERSION, "snapshot": snapshot.model_dump(mode="json"), "policy": policy.model_dump(mode="json")}
+    # GitHub list order is not review evidence. Preserve content, normalize only order.
+    canonical = lambda item: json.dumps(item, sort_keys=True)
+    for field in ("files", "checks"):
+        data["snapshot"][field].sort(key=canonical)
+    data["policy"]["required_checks"].sort(key=canonical)
+    data["policy"]["sensitive_patterns"].sort()
     return hashlib.sha256(json.dumps(data, sort_keys=True).encode()).hexdigest()
 
 
@@ -48,6 +60,27 @@ class Store:
             def sqlite_settings(connection, _):
                 connection.execute("PRAGMA journal_mode=WAL")
         metadata.create_all(self.engine)
+
+    def ping(self):
+        with self.engine.connect() as db:
+            db.execute(select(1)).scalar_one()
+
+    @staticmethod
+    def _lock_review(db, repository, number):
+        """Serialize recommendation creation and decision actions for one PR."""
+        insert = sqlite_insert if db.dialect.name == "sqlite" else postgres_insert
+        key = and_(review_heads.c.repository == repository, review_heads.c.number == number)
+        db.execute(insert(review_heads).values(repository=repository, number=number).on_conflict_do_nothing())
+        # A no-op UPDATE acquires the row's write lock on PostgreSQL and SQLite.
+        db.execute(update(review_heads).where(key).values(decision_id=review_heads.c.decision_id))
+        current = db.execute(select(review_heads.c.decision_id).where(key)).scalar_one()
+        if current is None:
+            # Lazily initialize the pointer for records created before this additive table.
+            current = db.execute(select(decisions.c.id).where(decisions.c.repository == repository,
+                decisions.c.number == number).order_by(decisions.c.created_at.desc(), decisions.c.id.desc()).limit(1)).scalar()
+            if current:
+                db.execute(update(review_heads).where(key).values(decision_id=current))
+        return current
 
     def enqueue(self, delivery_id, repository, number):
         try:
@@ -86,25 +119,66 @@ class Store:
                     error=error, decision_id=decision_id,
                     available_at=time.time() + min(300, 2 ** job["attempts"]), lease_until=0)).rowcount == 1
 
-    def record(self, snapshot, recommendation, policy, request_id=None):
+    def _record(self, db, snapshot, recommendation, policy, request_id):
         fp = fingerprint(snapshot, policy)
         decision_id = uuid.uuid4().hex
-        request_id = request_id or decision_id
+        self._lock_review(db, snapshot.repository, snapshot.number)
+        existing = db.execute(select(decisions.c.id, decisions.c.fingerprint).where(
+            decisions.c.request_id == request_id)).mappings().first()
+        if existing:
+            if existing["fingerprint"] != fp:
+                raise ValueError("Idempotency key is already bound to different evidence")
+            return existing["id"]
         evidence = snapshot.model_dump(mode="json")
         for f in evidence["files"]:
             f.pop("patch", None)
+        db.execute(decisions.insert().values(id=decision_id, fingerprint=fp, request_id=request_id,
+            repository=snapshot.repository, number=snapshot.number, head_sha=snapshot.head_sha,
+            base_sha=snapshot.base_sha, author=snapshot.author, evidence=json.dumps(evidence),
+            recommendation=recommendation.model_dump_json(), created_at=time.time(), revision=1))
+        db.execute(audit.insert().values(id=uuid.uuid4().hex, decision_id=decision_id,
+            at=time.time(), actor="policy", action="evaluated", reason=policy.version))
+        db.execute(update(review_heads).where(review_heads.c.repository == snapshot.repository,
+            review_heads.c.number == snapshot.number).values(decision_id=decision_id))
+        return decision_id
+
+    def record(self, snapshot, recommendation, policy, request_id=None):
+        request_id = request_id or uuid.uuid4().hex
         try:
             with self.engine.begin() as db:
-                db.execute(decisions.insert().values(id=decision_id, fingerprint=fp, request_id=request_id,
-                    repository=snapshot.repository, number=snapshot.number, head_sha=snapshot.head_sha,
-                    base_sha=snapshot.base_sha, author=snapshot.author, evidence=json.dumps(evidence),
-                    recommendation=recommendation.model_dump_json(), created_at=time.time(), revision=1))
-                db.execute(audit.insert().values(id=uuid.uuid4().hex, decision_id=decision_id,
-                    at=time.time(), actor="policy", action="evaluated", reason=policy.version))
-            return decision_id
+                return self._record(db, snapshot, recommendation, policy, request_id)
         except IntegrityError:
             with self.engine.connect() as db:
-                return db.execute(select(decisions.c.id).where(decisions.c.request_id == request_id)).scalar_one()
+                existing = db.execute(select(decisions.c.id, decisions.c.fingerprint).where(
+                    decisions.c.request_id == request_id)).mappings().first()
+                if existing and existing["fingerprint"] == fingerprint(snapshot, policy):
+                    return existing["id"]
+            raise
+
+    def complete(self, job, snapshot, recommendation, policy):
+        """The lease fence, recommendation, audit event and job completion commit together."""
+        with self.engine.begin() as db:
+            fenced = db.execute(update(jobs).where(jobs.c.id == job["id"],
+                jobs.c.lease_token == job["lease_token"], jobs.c.status == "running",
+                jobs.c.lease_until > time.time()).values(status="done", lease_until=0, error=None))
+            if fenced.rowcount != 1:
+                return None
+            decision_id = self._record(db, snapshot, recommendation, policy, job["id"])
+            db.execute(update(jobs).where(jobs.c.id == job["id"]).values(decision_id=decision_id))
+            return decision_id
+
+    def is_current(self, decision_id):
+        with self.engine.connect() as db:
+            row = db.execute(select(decisions.c.repository, decisions.c.number).where(
+                decisions.c.id == decision_id)).mappings().first()
+            if not row:
+                return False
+            current = db.execute(select(review_heads.c.decision_id).where(
+                review_heads.c.repository == row["repository"], review_heads.c.number == row["number"])).scalar()
+            if current is None:
+                current = db.execute(select(decisions.c.id).where(decisions.c.repository == row["repository"],
+                    decisions.c.number == row["number"]).order_by(decisions.c.created_at.desc(), decisions.c.id.desc()).limit(1)).scalar()
+            return current == decision_id
 
     def decision(self, decision_id):
         with self.engine.connect() as db:
@@ -118,13 +192,20 @@ class Store:
         result["recommendation"] = json.loads(result["recommendation"])
         return result
 
-    def recent(self):
+    def recent(self, repositories=None):
         with self.engine.connect() as db:
-            return [self.decode(row) for row in db.execute(select(decisions).order_by(
+            query = select(decisions)
+            if repositories is not None:
+                query = query.where(func.lower(decisions.c.repository).in_([r.lower() for r in repositories]))
+            return [self.decode(row) for row in db.execute(query.order_by(
                 decisions.c.created_at.desc()).limit(100)).mappings()]
 
     def resolve(self, decision_id, revision, actor, action, reason):
         with self.engine.begin() as db:
+            row = db.execute(select(decisions.c.repository, decisions.c.number).where(
+                decisions.c.id == decision_id)).mappings().first()
+            if not row or self._lock_review(db, row["repository"], row["number"]) != decision_id:
+                return False
             updated = db.execute(update(decisions).where(decisions.c.id == decision_id,
                 decisions.c.revision == revision, decisions.c.resolution.is_(None)).values(
                     resolution=action, revision=revision + 1))
@@ -147,6 +228,10 @@ class Store:
     def reserve_publication(self, decision_id):
         try:
             with self.engine.begin() as db:
+                row = db.execute(select(decisions.c.repository, decisions.c.number, decisions.c.resolution).where(
+                    decisions.c.id == decision_id)).mappings().first()
+                if not row or row["resolution"] != "approve" or self._lock_review(db, row["repository"], row["number"]) != decision_id:
+                    return False
                 db.execute(publications.insert().values(decision_id=decision_id, state="sending"))
             return True
         except IntegrityError:

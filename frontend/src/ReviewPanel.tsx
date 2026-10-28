@@ -22,6 +22,7 @@ const findingLabels: Record<string, string> = {
   sensitive_paths: 'Sensitive files changed',
   test_gap: 'Test updates need a closer look',
   test_removal: 'Tests were removed',
+  source_rename: 'Source files were renamed',
   required_ci: 'Required checks have not passed',
   secret_material: 'Possible credentials detected',
   risky_operation: 'Potentially risky operation',
@@ -63,6 +64,12 @@ export default function ReviewPanel({
     <div className="review-detail">
       {active ? (
         <>
+          {active.is_current === false && (
+            <div className="policy-note" role="status">
+              Historical recommendation: a newer review owns the current decision. This record
+              remains available for audit.
+            </div>
+          )}
           <div className="detail-heading">
             <div className="detail-repo">
               <GitPullRequest size={15} />
@@ -391,15 +398,17 @@ export default function ReviewPanel({
                   <div>
                     <strong>Your judgment. Your sign-off.</strong>
                     <small>
-                      {!canResolve
-                        ? session?.role === 'operator'
-                          ? 'Connect as a named reviewer to make a decision.'
-                          : 'Authors cannot review their own changes.'
-                        : active.recommendation.outcome === 'BLOCKED'
-                          ? 'Resolve the blockers and request fresh evidence.'
-                          : expired
-                            ? 'This recommendation expired. Queue a fresh review.'
-                            : 'Add a reason to keep the decision accountable.'}
+                      {active.is_current === false
+                        ? 'A newer review supersedes this recommendation.'
+                        : !canResolve
+                          ? session?.role === 'operator'
+                            ? 'Connect as a named reviewer to make a decision.'
+                            : 'Authors cannot review their own changes.'
+                          : active.recommendation.outcome === 'BLOCKED'
+                            ? 'Resolve the blockers and request fresh evidence.'
+                            : expired
+                              ? 'This recommendation expired. Queue a fresh review.'
+                              : 'Add a reason to keep the decision accountable.'}
                     </small>
                   </div>
                 </div>

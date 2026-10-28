@@ -8,6 +8,23 @@ def test_documentation_is_ready(snapshot, policy):
     assert evaluate(snapshot, policy).outcome == "READY"
 
 
+def test_prefix_plus_does_not_hide_added_secret(snapshot, policy):
+    snapshot.files[0].patch = "@@ -0,0 +1 @@\n+++AKIA" + "A" * 16
+    assert evaluate(snapshot, policy).outcome == "BLOCKED"
+
+
+def test_unicode_separator_does_not_hide_secret_inside_added_line(snapshot, policy):
+    snapshot.files[0].patch = '+comment\u2028AKIA' + 'A' * 16
+    assert evaluate(snapshot, policy).outcome == "BLOCKED"
+
+
+def test_source_renamed_out_of_source_classification_needs_review(snapshot, policy):
+    snapshot.files[0].filename = "docs/example.md"
+    snapshot.files[0].previous_filename = "src/invoice.py"
+    snapshot.files[0].status = "renamed"
+    assert evaluate(snapshot, policy).outcome == "REVIEW"
+
+
 @pytest.mark.parametrize("field,value", [("draft", True), ("state", "closed"),
     ("mergeable", None), ("mergeable", False), ("files_complete", False), ("files", [])])
 def test_incomplete_or_unready_changes_block(snapshot, policy, field, value):

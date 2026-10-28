@@ -40,6 +40,68 @@ def test_wrong_signature(system):
     assert system.post("/webhooks/github", content=b"{}").status_code == 401
 
 
+def test_malformed_action_is_a_client_error(system, settings):
+    body = json.dumps({"action": [], "number": 7, "repository": {"full_name": "example/project"}}).encode()
+    assert system.post("/webhooks/github", content=body, headers=signed(settings, body)).status_code == 400
+
+
+def test_boolean_pr_number_is_not_accepted(system):
+    assert system.post("/reviews", headers=headers("o"), json={"repository": "example/project", "number": True}).status_code == 422
+
+
+def test_pr_number_cannot_overflow_database_integer(system):
+    assert system.post("/reviews", headers=headers("o"), json={"repository": "example/project", "number": 2**64}).status_code == 422
+
+
+def test_dot_repository_name_is_valid_and_canonical(system, settings, store):
+    settings.repositories.add("example/.github")
+    response = system.post("/reviews", headers=headers("o"), json={"repository": "Example/.github", "number": 7})
+    assert response.status_code == 202
+    assert store.job(response.json()["job_id"])["repository"] == "example/.github"
+
+
+@pytest.mark.parametrize("repository", ["example/.", "example/..", "example/../project"])
+def test_repository_cannot_be_a_traversal_path(system, repository):
+    assert system.post("/reviews", headers=headers("o"), json={"repository": repository, "number": 7}).status_code == 422
+
+
+def test_health_reflects_database_outage(system, store, monkeypatch):
+    from sqlalchemy.exc import OperationalError
+    def unavailable():
+        raise OperationalError("SELECT", {}, RuntimeError("database down"))
+    monkeypatch.setattr(store, "ping", unavailable)
+    assert system.get("/health").status_code == 503
+
+
+def test_superseded_recommendation_cannot_be_resolved(system, store, snapshot, policy):
+    old = store.record(snapshot, evaluate(snapshot, policy), policy)
+    store.record(snapshot, evaluate(snapshot, policy), policy)
+    assert request_resolution(system, old).status_code == 409
+    assert store.decision(old)["resolution"] is None
+
+
+def test_review_superseded_during_refresh_is_fenced_at_database_write(settings, store, snapshot, policy):
+    old = store.record(snapshot, evaluate(snapshot, policy), policy)
+    class Gateway:
+        def snapshot(self, *_):
+            store.record(snapshot, evaluate(snapshot, policy), policy)
+            return snapshot
+    with TestClient(create_app(settings, store, Gateway())) as client:
+        assert request_resolution(client, old).status_code == 409
+    assert store.decision(old)["resolution"] is None
+
+
+def test_allowed_repository_is_filtered_before_result_limit(system, store, snapshot, policy):
+    key = store.record(snapshot, evaluate(snapshot, policy), policy)
+    other = snapshot.model_copy(deep=True)
+    other.repository = "other/project"
+    for i in range(101):
+        other.number = i + 1
+        store.record(other, evaluate(other, policy), policy)
+    rows = system.get("/decisions", headers=headers()).json()
+    assert [r["id"] for r in rows] == [key]
+
+
 def test_resolution_requires_a_substantive_reason(system, store, snapshot, policy):
     key = store.record(snapshot, evaluate(snapshot, policy), policy)
     result = system.post(f"/decisions/{key}/resolve", headers=headers(), json={

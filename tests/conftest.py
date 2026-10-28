@@ -17,7 +17,7 @@ def snapshot():
     return Snapshot.model_validate({
         "repository": "example/project", "number": 7, "head_sha": "a" * 40, "base_sha": "b" * 40,
         "author": "contributor", "mergeable": True,
-        "files": [{"filename": "README.md", "additions": 4, "deletions": 1, "patch": "@@ -1 +1 @@\n-old\n+new"}],
+        "files": [{"filename": "README.md", "additions": 1, "deletions": 1, "patch": "@@ -1 +1 @@\n-old\n+new"}],
         "checks": [{"name": "test", "app_id": 15368, "status": "completed", "conclusion": "success", "head_sha": "a" * 40}],
     })
 
@@ -26,9 +26,9 @@ def snapshot():
 def store(tmp_path):
     instance = Store(os.getenv("TEST_DATABASE_URL", "sqlite:///" + (tmp_path / "test.db").as_posix()))
     if os.getenv("TEST_DATABASE_URL"):
-        from approvalflow.storage import audit, decisions, jobs, publications
+        from approvalflow.storage import audit, decisions, jobs, publications, review_heads
         with instance.engine.begin() as db:
-            for table in (publications, audit, decisions, jobs):
+            for table in (publications, audit, review_heads, decisions, jobs):
                 db.execute(table.delete())
     yield instance
     instance.engine.dispose()

@@ -339,10 +339,12 @@ export default function App() {
   const expired = active ? Date.now() / 1000 - active.created_at > 3600 : false;
   const canResolve =
     active &&
+    active.is_current !== false &&
     session?.role === 'reviewer' &&
     session.actor.toLowerCase() !== active.author.toLowerCase() &&
     !active.resolution;
   const canPublish =
+    active?.is_current !== false &&
     active?.resolution === 'approve' &&
     session?.publication_enabled &&
     active.audit?.some((e) => e.action === 'approve' && e.actor === session.actor);

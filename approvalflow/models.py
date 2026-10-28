@@ -1,6 +1,15 @@
 from typing import Literal
 
-from pydantic import BaseModel, Field, model_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
+from .versions import POLICY_ENGINE_VERSION
+
+REPOSITORY_PATTERN = r"^[A-Za-z0-9_][A-Za-z0-9_.-]*/[A-Za-z0-9_.-]+$"
+
+
+def normalize_repository(value):
+    if value.split("/")[1] in {".", ".."}:
+        raise ValueError("Repository cannot be a path traversal segment")
+    return value.lower()
 
 
 class ChangedFile(BaseModel):
@@ -10,6 +19,7 @@ class ChangedFile(BaseModel):
     additions: int = Field(ge=0)
     deletions: int = Field(ge=0)
     patch: str | None = None
+    patch_complete: bool = True
 
 
 class Check(BaseModel):
@@ -22,8 +32,8 @@ class Check(BaseModel):
 
 class Snapshot(BaseModel):
     title: str = Field(default="", max_length=512)
-    repository: str = Field(pattern=r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")
-    number: int = Field(gt=0)
+    repository: str = Field(pattern=REPOSITORY_PATTERN, max_length=256)
+    number: int = Field(gt=0, le=2_147_483_647, strict=True)
     head_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
     base_sha: str = Field(pattern=r"^[0-9a-f]{40}$")
     author: str = Field(min_length=1)
@@ -33,6 +43,11 @@ class Snapshot(BaseModel):
     files_complete: bool = True
     files: list[ChangedFile] = Field(max_length=3000)
     checks: list[Check] = Field(default_factory=list)
+
+    @field_validator("repository")
+    @classmethod
+    def canonical_repository(cls, value):
+        return normalize_repository(value)
 
 
 class RequiredCheck(BaseModel):
@@ -68,6 +83,7 @@ class Finding(BaseModel):
 class Recommendation(BaseModel):
     outcome: Literal["READY", "REVIEW", "BLOCKED"]
     policy_version: str
+    engine_version: str = POLICY_ENGINE_VERSION
     findings: list[Finding]
     changed_lines: int
     changed_files: int

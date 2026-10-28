@@ -1,5 +1,5 @@
 {
-  "verified_at": "2026-10-28T07:48:40.389786+00:00",
+  "verified_at": "2026-10-28T09:58:55.804639+00:00",
   "version": "0.2.0",
   "python": "3.12.14",
   "suites": {
@@ -7,23 +7,23 @@
       "errors": "0",
       "failures": "0",
       "skipped": "0",
-      "tests": "119",
-      "time": "14.629"
+      "tests": "144",
+      "time": "23.203"
     },
     "postgres": {
       "errors": "0",
       "failures": "0",
       "skipped": "0",
-      "tests": "119",
-      "time": "23.637"
+      "tests": "144",
+      "time": "35.447"
     }
   },
   "frontend": {
-    "tests": 12,
-    "passed": 12,
+    "tests": 13,
+    "passed": 13,
     "failed": 0,
-    "scope": "JSDOM behavior tests with simulated API responses, including product navigation and request selection",
-    "verified_at": "2026-10-28T09:15:36.271804+00:00"
+    "scope": "JSDOM behavior tests, including superseded-review controls and product/workspace navigation",
+    "verified_at": "2026-10-28T09:58:55.804639+00:00"
   },
   "browser_checks": {
     "desktop": "Default browser viewport",
@@ -37,5 +37,12 @@
   "ci": "Frontend and two-database workflow supplied; remote GitHub Actions has not run",
   "warnings": [
     "Starlette warns that its httpx-based TestClient is deprecated; all backend tests passed"
-  ]
+  ],
+  "policy_engine_version": "2026-10-28.2",
+  "audit": {
+    "report": "docs/BACKEND_AUDIT.md",
+    "reproduced_failures_before_fix": 12,
+    "backend_regression_cases_added": 25,
+    "live_github_writes": 0
+  }
 }

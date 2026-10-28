@@ -12,17 +12,23 @@ from pydantic import BaseModel, Field, ValidationError, field_validator
 from starlette.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy.exc import SQLAlchemyError
 
 from .config import Settings
 from .github import GitHub
-from .models import Snapshot
+from .models import REPOSITORY_PATTERN, normalize_repository
 from .policy import evaluate
 from .storage import Store, fingerprint
 
 
 class PullRequestRef(BaseModel):
-    repository: str = Field(pattern=r"^[A-Za-z0-9_][A-Za-z0-9_.-]*/[A-Za-z0-9_][A-Za-z0-9_.-]*$")
-    number: int = Field(gt=0)
+    repository: str = Field(pattern=REPOSITORY_PATTERN, max_length=256)
+    number: int = Field(gt=0, le=2_147_483_647, strict=True)
+
+    @field_validator("repository")
+    @classmethod
+    def canonical_repository(cls, value):
+        return normalize_repository(value)
 
 
 class Resolution(BaseModel):
@@ -87,6 +93,8 @@ def create_app(settings: Settings | None = None, store=None, github=None):
         return decision
 
     def refresh_for_approval(decision):
+        if not store.is_current(decision["id"]):
+            raise HTTPException(409, "A newer review supersedes this recommendation")
         if time.time() - decision["created_at"] > 3600:
             raise HTTPException(409, "Recommendation expired; request a fresh review")
         try:
@@ -101,6 +109,10 @@ def create_app(settings: Settings | None = None, store=None, github=None):
 
     @app.get("/health")
     def health():
+        try:
+            store.ping()
+        except SQLAlchemyError:
+            raise HTTPException(503, "Database unavailable")
         return {"status": "ok"}
 
     @app.get("/app-config")
@@ -137,7 +149,10 @@ def create_app(settings: Settings | None = None, store=None, github=None):
                 raise ValueError()
         except (ValueError, UnicodeDecodeError):
             raise HTTPException(400, "Invalid JSON object")
-        pr_event = x_github_event == "pull_request" and payload.get("action") in {
+        action = payload.get("action")
+        if action is not None and not isinstance(action, str):
+            raise HTTPException(400, "Invalid event action")
+        pr_event = x_github_event == "pull_request" and action in {
             "opened", "reopened", "synchronize", "ready_for_review"}
         check_event = x_github_event in {"check_run", "check_suite"} and payload.get("action") == "completed"
         if not pr_event and not check_event:
@@ -178,12 +193,13 @@ def create_app(settings: Settings | None = None, store=None, github=None):
 
     @app.get("/decisions", dependencies=[Depends(identity)])
     def list_decisions():
-        return [d for d in store.recent() if d["repository"].lower() in settings.repositories]
+        return store.recent(settings.repositories)
 
     @app.get("/decisions/{decision_id}", dependencies=[Depends(identity)])
     def get_decision(decision_id: str):
         decision = decision_or_404(decision_id)
-        return {**decision, "audit": store.events(decision_id), "publication": store.publication(decision_id)}
+        return {**decision, "is_current": store.is_current(decision_id),
+                "audit": store.events(decision_id), "publication": store.publication(decision_id)}
 
     @app.post("/decisions/{decision_id}/resolve")
     def resolve(decision_id: str, resolution: Resolution, actor=Depends(identity)):
@@ -195,7 +211,7 @@ def create_app(settings: Settings | None = None, store=None, github=None):
         if resolution.action == "approve":
             refresh_for_approval(decision)
         if not store.resolve(decision_id, resolution.expected_revision, actor, resolution.action, resolution.reason):
-            raise HTTPException(409, "Decision already resolved or revision changed")
+            raise HTTPException(409, "Decision superseded, already resolved or revision changed")
         return {"resolution": resolution.action, "revision": resolution.expected_revision + 1,
                 "github_action": "none", "reviewer": actor}
 
@@ -214,7 +230,7 @@ def create_app(settings: Settings | None = None, store=None, github=None):
             raise HTTPException(409, "Publication is in progress or uncertain; inspect GitHub before any further submission")
         current = refresh_for_approval(decision)
         if not store.reserve_publication(decision_id):
-            raise HTTPException(409, "Another request already reserved this publication")
+            raise HTTPException(409, "Decision superseded or another request already reserved this publication")
         try:
             result = github.publish_approval(current, decision_id, actor, approvals[-1]["reason"])
         except Exception as exc:

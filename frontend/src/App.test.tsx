@@ -148,6 +148,16 @@ test('demo loads real-shaped evidence and distinguishes required human review', 
   expect(localStorage.setItem).not.toHaveBeenCalled();
   expect(sessionStorage.setItem).not.toHaveBeenCalled();
 });
+
+test('historical recommendations explain why decision actions are disabled', async () => {
+  const backend = server();
+  backend.rows[0].is_current = false;
+  await boot();
+  expect(screen.getByRole('button', { name: 'Approve review' })).toBeDisabled();
+  expect(screen.getByRole('button', { name: 'Reject' })).toBeDisabled();
+  expect(screen.getByText(/Historical recommendation:/)).toBeVisible();
+  expect(screen.getByText('A newer review supersedes this recommendation.')).toBeVisible();
+});
 test('search and filters select matching evidence and handle empty results', async () => {
   server();
   await boot();

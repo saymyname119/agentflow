@@ -36,6 +36,7 @@ For a fresh checkout, follow setup below. See [the three-minute walkthrough](doc
 - Separates operator and named reviewer credentials; authors cannot sign off their own changes.
 - Refreshes GitHub evidence before approval. A changed commit, base, CI result or policy invalidates the earlier recommendation.
 - Uses database compare-and-swap updates so simultaneous reviewers cannot create conflicting resolutions. Records the winning decision and audit event in one transaction.
+- Serializes current-review changes per pull request; historical recommendations cannot start new approvals or publication attempts.
 - Stores file metadata and findings, without saving raw source patches or credential values.
 - Optionally publishes a human-approved review to GitHub, bound to the inspected commit, with a persistent reservation that prevents duplicate submissions.
 
@@ -125,15 +126,21 @@ flowchart LR
 
 Database jobs remove the need for a separate broker at this scale. Claiming a job and resolving a decision use conditional updates checked by the database. Delivery IDs deduplicate ingress; request IDs deduplicate repeated processing after a crash. An old worker cannot complete a job after another worker acquires its lease. Worker leases last 120 seconds; slow evidence collection can lose its lease and be retried rather than overwrite a newer result.
 
+Recommendation creation, audit insertion and job completion now share one fenced transaction. A small `review_heads` table serializes recommendation creation, reviewer decisions and publication reservations for each PR. Older records remain available for audit, and the API marks them `is_current: false`. Their decision controls are disabled.
+
 Transient GitHub failures retry at increasing delays, up to five attempts. Exhausted work is visible as `dead`; an operator can submit a fresh request after resolving the cause. Completed CI events trigger fresh analysis instead of leaving the original pending-CI recommendation as the final result. The earlier record stays available for audit.
 
 Trusted policy is loaded once per process; restart the API and worker after a change. Policy content, not just the version label, contributes to the evidence fingerprint. Raw patch text contributes to that hash but is not persisted.
+
+Fingerprints normalize list order and also bind the evaluator engine version. Increment `POLICY_ENGINE_VERSION` when evaluator logic changes. GitHub patches are checked against reported addition/deletion counts; incomplete patches receive a review finding while visible content still undergoes credential/risk scanning. `/health` verifies database readiness and reports 503 when that check fails; it is not a live worker or GitHub availability probe.
 
 ## Verified evidence
 
 See `evaluation/results.json`, `evaluation/reliability-results.json` and `evaluation/verification.json` for measured results. `RESUME_POINTS.md` translates these experiments into recruiter-readable bullets. Numbers describe local synthetic experiments, not deployed users or measured team savings.
 
-To reproduce the PostgreSQL suite, point `TEST_DATABASE_URL` to a **disposable database**: its three application tables are cleared before each database test. Then run `pytest -q`. CI includes separate SQLite and PostgreSQL jobs; CI itself has not run remotely until this repository is pushed.
+To reproduce the PostgreSQL suite, point `TEST_DATABASE_URL` to a **disposable database**: its application tables are cleared before each database test. Then run `pytest -q`. CI includes separate SQLite and PostgreSQL jobs; CI itself has not run remotely until this repository is pushed.
+
+The [backend audit](docs/BACKEND_AUDIT.md) records reproduced issues, corrections, verification and the goals that still require live validation.
 
 The frontend has behavior tests for search, filtering, blocked approvals, reason validation, stale-evidence conflicts, queue completion, authentication and navigation. The responsive console was also checked in the browser at desktop and phone widths. The CI workflow builds and tests the frontend, then runs backend verification on both databases using the same built console.
 
@@ -148,7 +155,7 @@ python evaluation/reliability.py
 
 - The 40 evaluation cases are authored regression fixtures, not an independent safety dataset. Real-world false-ready and false-escalation rates remain unmeasured.
 - Same-module test filenames are a test-update signal, not proof of meaningful tests, execution or coverage. Unrelated modules with identical basenames can match.
-- Risk and credential patterns are limited heuristics; they can miss issues or escalate harmless text. Available patches are not full-repository analysis, and GitHub may truncate content without an explicit marker.
+- Risk and credential patterns are limited heuristics; they can miss issues or escalate harmless text. Available patches are not full-repository analysis. Count mismatches identify incomplete patches, but matching counts do not prove complete semantic context or code safety.
 - Required check runs must be configured explicitly. Legacy commit-status contexts, branch-protection discovery and organization-wide policy inheritance are not implemented.
 - A shared GitHub token and environment-provisioned reviewer credentials suit a single trusted team. This is not a multi-tenant SaaS or OAuth identity service.
 - GitHub reads and review creation cannot be one atomic transaction. A push can arrive between the final read and publication; the review is tied to the inspected commit. Configure stale-approval dismissal and branch protection on GitHub. Optional publication is tested with a mock GitHub transport, not a live write.

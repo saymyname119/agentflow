@@ -2,6 +2,7 @@
 import httpx
 
 from .models import ChangedFile, Check, Snapshot
+from .patches import patch_is_complete
 
 
 class GitHub:
@@ -37,12 +38,15 @@ class GitHub:
         # Pull-request files are mutable. Reject torn reads, including a changed base.
         if (head, base, first["updated_at"]) != (final["head"]["sha"], final["base"]["sha"], final["updated_at"]):
             raise ValueError("Pull request changed while collecting evidence; retry")
+        parsed_files = [ChangedFile.model_validate(f) for f in files]
+        for file in parsed_files:
+            file.patch_complete = patch_is_complete(file)
         return Snapshot(
             title=final.get("title", ""),
             repository=repository, number=number, head_sha=head, base_sha=base,
             author=final["user"]["login"], draft=final["draft"], state=final["state"],
             mergeable=final.get("mergeable"), files_complete=len(files) == final["changed_files"],
-            files=[ChangedFile.model_validate(f) for f in files],
+            files=parsed_files,
             checks=[Check(name=c["name"], app_id=c["app"]["id"], status=c["status"],
                           conclusion=c.get("conclusion"), head_sha=c["head_sha"]) for c in checks],
         )

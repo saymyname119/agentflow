@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-10-28T07:48:41.832320+00:00",
+  "generated_at": "2026-10-28T09:58:57.862792+00:00",
   "dataset": "40 hand-authored synthetic scenarios",
   "limitations": "Policy regression fixtures authored with the implementation, not an independent or real-world safety benchmark. Timing measures the in-process policy function only; excludes GitHub, HTTP, database and queue time.",
   "python": "3.12.14",
@@ -18,8 +18,8 @@
   "agent_false_escalations": 0,
   "latency": {
     "samples": 2000,
-    "p50_ms": 0.0875,
-    "p95_ms": 0.2164
+    "p50_ms": 0.045,
+    "p95_ms": 0.1345
   },
   "results": [
     {

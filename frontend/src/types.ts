@@ -34,6 +34,7 @@ export type AuditEvent = {
   reason: string;
 };
 export type Decision = {
+  is_current?: boolean;
   id: string;
   repository: string;
   number: number;
