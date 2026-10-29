@@ -2,7 +2,7 @@
 
 **Python, FastAPI, PostgreSQL, React, TypeScript, SQLAlchemy, GitHub REST API, Docker, GitHub Actions**
 
-Use the bullets below for the implemented local project. Docker and CI configuration are included, but do not claim deployment or successful remote CI until those have actually run.
+Use the bullets below for the implemented project. GitHub Actions passed for the foundation and guardrail releases, including frontend and SQLite/PostgreSQL jobs (see docs/RELEASE.md). Docker deployment has not been verified.
 
 - Built a Python/FastAPI GitHub review agent with a React/TypeScript dashboard to flag risky code changes, reducing unsafe readiness recommendations from 26 to 0 against a CI-only baseline across 40 synthetic scenarios.
 - Used PostgreSQL transactions and version checks to prevent conflicting reviewer decisions, recording exactly one resolution in each of 100 simulated races with 32 concurrent requests.

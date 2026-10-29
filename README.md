@@ -2,6 +2,10 @@
 
 An explainable GitHub pull-request approval agent built with **React, TypeScript, Python, FastAPI and PostgreSQL**. It gathers review evidence, clears routine changes for sign-off, and sends uncertain or sensitive changes to a person.
 
+[![Tests](https://github.com/saymyname119/agentflow/actions/workflows/test.yml/badge.svg)](https://github.com/saymyname119/agentflow/actions/workflows/test.yml)
+
+See the [phased release record](docs/RELEASE.md) for verified results and remaining deployment boundaries.
+
 The React console includes a searchable review inbox, commit-bound CI evidence, risk explanations, file metadata, reason-required decisions, activity history, a trusted-policy view, and a page explaining the measured results. A fixture-backed demo runs the real policy, database and decision code without GitHub credentials.
 
 ![ApprovalFlow product overview](docs/product-overview.png)
