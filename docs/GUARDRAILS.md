@@ -1,6 +1,6 @@
 # Approval guardrails
 
-The agent recommends; an authenticated person decides. `READY` never grants approval authority. Trusted server policy, API authorization, and transactional database constraints enforce the boundary. No LLM is connected today.
+The agent recommends; an authenticated person decides. `READY` never grants approval authority. Trusted server policy, API authorization, and transactional database constraints enforce the boundary. An optional LLM audit is implemented, disabled by default and always disabled in the isolated demo.
 
 | Boundary | Enforced behavior |
 | --- | --- |
@@ -11,15 +11,17 @@ The agent recommends; an authenticated person decides. `READY` never grants appr
 | Freshness | Approval and publication refresh evidence. Changes to head, base, checks, policy or engine invalidate the recommendation. Recommendations expire after one hour; negative age also fails closed. |
 | Concurrency | Expiring worker leases, atomic recommendation writes, current-review locks and expected revisions prevent stale or conflicting mutations. |
 | External action | Publication is disabled by default, bound to the inspected commit, and protected by a durable reservation. Ambiguous results require manual inspection; no automatic resubmission. No merge endpoint exists. |
-| Accountability | Successful analysis, resolution and publication transitions have persistent records. Raw patches and credential values are not persisted. Denied attempts are not yet a persistent security-event feed. |
+| Accountability | Successful analysis, audit reservations/completions, resolution and publication transitions have persistent records. Raw patches are not persisted. Model findings are stored, so their text may reflect repository content; credential-marker checks are limited. Denied attempts are not yet a persistent security-event feed. |
 
 `approvalflow/guardrails.py` is the shared approval boundary. API authorization, deterministic risk rules, and database constraints remain separate enforcement layers. An API preflight alone cannot replace transactional checks.
 
-## Boundary for a future LLM audit
+## LLM audit boundary
 
-An LLM audit is advisory and is not implemented. Before connecting one, require schema-validated findings with valid changed-file and line references, bounded context and output, a deadline and request/token budget, and explicit unavailable/invalid states. Repository text is untrusted data, including instructions embedded in comments. The model receives no GitHub write credentials or tools. Do not interpret its prose as executable actions.
+The optional audit validates a strict output schema and every finding's path/added-line anchor. It bounds input, response bytes and output tokens, applies HTTP timeouts, and sends no tools or GitHub credentials. Repository text is untrusted data; returned text is never executed. Prompt instructions help steer the model but do not prove resistance to prompt injection.
 
-When an audit is configured as required, timeout, invalid output or unavailability must prevent approval; never silently skip the required audit. Bind its result to the evidence fingerprint and audit configuration so an older result cannot authorize a newer PR. Findings may increase required scrutiny; model output must never lower deterministic risk or remove a blocker. These are requirements for the future integration, not claims about present protection against LLM attacks.
+Enabling audit makes a completed report mandatory. The report is bound to an immutable recommendation (and thus its evidence fingerprint) and the model/prompt version. Evidence is refreshed before and after generation and again before approval/publication. Approval requires the current report ID and the UI requires explicit acknowledgement. A model report never changes the deterministic outcome or removes a blocker. The named reviewer remains responsible for deciding how to address findings.
+
+Database reservations permit one request per recommendation/configuration, including across server restarts. Failed or interrupted requests do not retry automatically and cannot satisfy the approval gate; request a fresh recommendation. No global spending limit is implemented; configure provider budgets. See LLM_AUDIT.md for setup and limitations.
 
 ## Limits
 

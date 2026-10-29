@@ -36,6 +36,12 @@ publications = Table("publications", metadata,
 review_heads = Table("review_heads", metadata,
     Column("repository", String(256), primary_key=True), Column("number", Integer, primary_key=True),
     Column("decision_id", String(64)))
+llm_audits = Table("llm_audits", metadata,
+    Column("id", String(64), primary_key=True),
+    Column("decision_id", String(64), nullable=False),
+    Column("config_key", String(64), nullable=False),
+    Column("state", String(24), nullable=False), Column("report", Text),
+    Column("created_at", Float, nullable=False))
 
 
 def fingerprint(snapshot, policy):
@@ -64,6 +70,41 @@ class Store:
     def ping(self):
         with self.engine.connect() as db:
             db.execute(select(1)).scalar_one()
+
+    def llm_audit(self, decision_id, config_key):
+        with self.engine.connect() as db:
+            row = db.execute(select(llm_audits).where(llm_audits.c.decision_id == decision_id,
+                llm_audits.c.config_key == config_key)).mappings().first()
+            if not row:
+                return None
+            return {**dict(row), "report": json.loads(row["report"]) if row["report"] else None}
+
+    def reserve_audit(self, decision_id, config_key, actor):
+        # Deterministic primary key caps paid requests to one per decision/configuration.
+        key = hashlib.sha256((decision_id + config_key).encode()).hexdigest()
+        try:
+            with self.engine.begin() as db:
+                row = db.execute(select(decisions).where(decisions.c.id == decision_id)).mappings().first()
+                if not row or self._lock_review(db, row["repository"], row["number"]) != decision_id:
+                    return False
+                db.execute(llm_audits.insert().values(id=key, decision_id=decision_id,
+                    config_key=config_key, state="running", created_at=time.time()))
+                db.execute(audit.insert().values(id=uuid.uuid4().hex, decision_id=decision_id,
+                    at=time.time(), actor=actor, action="llm_started", reason=config_key))
+            return True
+        except IntegrityError:
+            return False
+
+    def finish_audit(self, decision_id, config_key, actor, report=None):
+        with self.engine.begin() as db:
+            result = db.execute(update(llm_audits).where(llm_audits.c.decision_id == decision_id,
+                llm_audits.c.config_key == config_key, llm_audits.c.state == "running").values(
+                    state="completed" if report is not None else "unavailable",
+                    report=report.model_dump_json() if report is not None else None))
+            if result.rowcount == 1:
+                db.execute(audit.insert().values(id=uuid.uuid4().hex, decision_id=decision_id,
+                    at=time.time(), actor=actor, action="llm_completed" if report is not None else "llm_unavailable",
+                    reason=config_key))
 
     @staticmethod
     def _lock_review(db, repository, number):

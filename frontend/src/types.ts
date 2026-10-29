@@ -34,6 +34,20 @@ export type AuditEvent = {
   reason: string;
 };
 export type Decision = {
+  llm_audit?: {
+    id: string;
+    state: 'running' | 'completed' | 'unavailable';
+    report: {
+      findings: {
+        path: string;
+        line: number;
+        severity: string;
+        title: string;
+        explanation: string;
+        suggestion: string;
+      }[];
+    } | null;
+  } | null;
   is_current?: boolean;
   id: string;
   repository: string;
@@ -67,6 +81,7 @@ export type Policy = {
   sensitive_patterns: string[];
 };
 export type Session = {
+  llm_audit_enabled?: boolean;
   actor: string;
   role: 'operator' | 'reviewer';
   repositories: string[];

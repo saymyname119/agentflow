@@ -16,7 +16,7 @@ The product overview introduces the workflow and its measured results. **Open re
 
 **Small architecture:** one service, one worker from the same package, one database. No Redis, vector database, microservices or agent framework.
 
-See [the approval guardrail system](docs/GUARDRAILS.md) for the enforced input, evidence, policy, identity, freshness, concurrency and publication boundaries, plus requirements for a future advisory LLM audit.
+See [the approval guardrail system](docs/GUARDRAILS.md) for the input, evidence, policy, identity, freshness, concurrency and optional LLM audit boundaries.
 
 ## Open the working demo
 
@@ -48,7 +48,13 @@ For a fresh checkout, follow setup below. See [the three-minute walkthrough](doc
 
 `READY` means **eligible for human sign-off**, `REVIEW` means a person must inspect the stated risks, and `BLOCKED` means required evidence or safety conditions failed. Human approval is recorded locally. A separate explicit action can publish an `APPROVE` review to GitHub when enabled. The service never merges code.
 
-This is a **deterministic workflow agent**, not an LLM reviewer. It does not understand arbitrary program behavior or prove test coverage. Adding an LLM is a future experiment with a measurable baseline, not a dependency needed to run the project.
+The core workflow uses **deterministic rules**. An optional OpenAI-powered code audit adds structured findings with validated added-line references. It cannot remove blockers or approve changes. The demo remains credential-free and never calls a model. Neither rules nor model findings prove correctness or test coverage.
+
+## Optional LLM audit
+
+Set `LLM_AUDIT_ENABLED=true`, `OPENAI_API_KEY` and `LLM_MODEL` in the server environment. Choose a model available to your account that supports the Responses API and structured outputs. Restart the API. In a current, unblocked review, open **LLM audit**, run the audit, inspect its findings and acknowledge the report before approving with a reason. Enabling the feature makes a completed report mandatory for both approval and publication; unavailable audits never silently bypass it.
+
+This sends the PR diff to OpenAI. Enable it only for authorized code. The adapter sets `store=false`, sends no tools, has a 60 KB input budget and 2,500 output-token cap, and permits one paid attempt per recommendation/configuration. Failures and interrupted requests require a fresh recommendation; there is no automatic retry. Configure provider spend limits separately. See [LLM audit setup, scope and tests](docs/LLM_AUDIT.md). No live model call or independent quality benchmark has been performed.
 
 ## Try it without credentials
 
@@ -144,7 +150,7 @@ Fingerprints normalize list order and also bind the evaluator engine version. In
 
 See `evaluation/results.json`, `evaluation/reliability-results.json` and `evaluation/verification.json` for measured results. `RESUME_POINTS.md` translates these experiments into recruiter-readable bullets. Numbers describe local synthetic experiments, not deployed users or measured team savings.
 
-To reproduce the PostgreSQL suite, point `TEST_DATABASE_URL` to a **disposable database**: its application tables are cleared before each database test. Then run `pytest -q`. CI includes separate SQLite and PostgreSQL jobs; CI itself has not run remotely until this repository is pushed.
+To reproduce the PostgreSQL suite, point `TEST_DATABASE_URL` to a **disposable database**: its application tables are cleared before each database test. Then run `pytest -q`. CI includes separate SQLite and PostgreSQL jobs; see the release record and Actions badge for verified remote runs.
 
 The [backend audit](docs/BACKEND_AUDIT.md) records reproduced issues, corrections, verification and the goals that still require live validation.
 

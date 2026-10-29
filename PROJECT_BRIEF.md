@@ -16,7 +16,7 @@ Put relevant skills early, explain what the project does in language a recruiter
 
 One Python/FastAPI service, a worker from the same package, and PostgreSQL. SQLite supports an easy local demo. A policy function combines trusted CI, change size, sensitive paths, test-update signals, and risky added operations. Human reviewers resolve recommendations with fresh evidence and a recorded reason.
 
-This version is a deterministic workflow agent. It does not use an LLM, LangGraph or LangChain. Do not describe it as an LLM code reviewer or claim semantic bug detection. An LLM should only be added after a labeled dataset shows it adds value beyond this baseline.
+The core is a deterministic workflow agent with no LangGraph or LangChain. The later optional LLM audit is a bounded advisory experiment behind approval guardrails, disabled by default. Do not claim measured semantic bug detection or accuracy gains until an independently labeled dataset establishes them.
 
 ## Definition of done
 

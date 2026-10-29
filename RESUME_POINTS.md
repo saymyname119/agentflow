@@ -24,7 +24,7 @@ The agent helps a reviewer decide which changes need attention. It checks the ex
 
 The interesting engineering is handling retries, duplicate events, stale evidence and conflicting reviewer decisions. PostgreSQL is responsible for durable records and atomic updates. A separate message broker was unnecessary for this workload.
 
-This implementation uses deterministic rules. Optional GitHub review publication requires an explicit human request and is disabled by default. Do not claim LLM reasoning, semantic code understanding, production time savings, unattended GitHub approvals, or guaranteed internship shortlisting.
+The core uses deterministic rules; an optional LLM audit has schema validation, added-line citations and human acknowledgement. Its adapter and guardrails are tested with simulated provider responses, not a live model benchmark. Optional GitHub review publication requires an explicit human request and is disabled by default. Do not claim measured model accuracy, production time savings, unattended GitHub approvals, or guaranteed internship shortlisting.
 
 ## Better future metrics
 

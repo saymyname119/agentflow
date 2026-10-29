@@ -29,7 +29,7 @@ Run the local demo with `approvalflow demo` after building the frontend. Open `h
 
 **What if GitHub accepts a publication but the response times out?** A durable publication reservation prevents automatic resubmission for that decision. The outcome stays uncertain for manual inspection. GitHub and PostgreSQL do not share a transaction, so this version deliberately does not claim exactly-once remote delivery.
 
-**Where is the AI?** This version is a deterministic workflow agent. Its value is composed evidence, explicit guardrails and reliable state handling. An LLM would need to beat this baseline on an independently labeled set before it earns a place in the approval path.
+**Where is the AI?** The core workflow is deterministic. A configurable OpenAI audit provides structured, line-anchored advisory findings in live mode; the fixture-backed demo disables it. When enabled, a completed and acknowledged report is required for approval, but cannot remove rule-based blockers. Model quality has not been independently benchmarked.
 
 **What would you improve next?** Independently label real sandbox PRs, measure unnecessary escalations and reviewer disagreement, add explicit database migrations for schema evolution, and validate the live GitHub integration. Avoid claiming those steps are already complete.
 

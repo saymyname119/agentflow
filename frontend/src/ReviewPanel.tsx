@@ -16,7 +16,9 @@ import {
   X,
   XCircle,
 } from 'lucide-react';
+import { useState } from 'react';
 import { Badge } from './components';
+import LLMAuditPanel from './LLMAuditPanel';
 import { relativeTime, type Decision, type Session } from './types';
 const findingLabels: Record<string, string> = {
   sensitive_paths: 'Sensitive files changed',
@@ -35,6 +37,8 @@ const findingLabels: Record<string, string> = {
 };
 
 type Props = {
+  token: string;
+  onAuditComplete: () => void;
   active: Decision | null;
   selectedRow?: Decision;
   session: Session | null;
@@ -48,6 +52,8 @@ type Props = {
   onDecision: (action: 'approve' | 'reject' | 'publish') => void;
 };
 export default function ReviewPanel({
+  token,
+  onAuditComplete,
   active,
   selectedRow,
   session,
@@ -60,6 +66,10 @@ export default function ReviewPanel({
   navigate,
   onDecision,
 }: Props) {
+  const [acknowledgedAudit, setAcknowledgedAudit] = useState('');
+  const auditReady =
+    !session?.llm_audit_enabled ||
+    (active?.llm_audit?.state === 'completed' && acknowledgedAudit === active.llm_audit.id);
   return (
     <div className="review-detail">
       {active ? (
@@ -107,6 +117,7 @@ export default function ReviewPanel({
               ['overview', 'Overview'],
               ['files', `Files changed (${active.evidence.files.length})`],
               ['checks', `Checks (${active.evidence.checks.length})`],
+              ['llm', 'LLM audit'],
               ['activity', 'Activity'],
             ].map(([key, label]) => (
               <button
@@ -128,6 +139,20 @@ export default function ReviewPanel({
             id="evidence-panel"
             aria-labelledby={`tab-${tab}`}
           >
+            {tab === 'llm' && (
+              <LLMAuditPanel
+                key={`${active.id}-${token}`}
+                decision={active}
+                enabled={!!session?.llm_audit_enabled}
+                token={token}
+                canRun={!!canResolve && !expired && active.recommendation.outcome !== 'BLOCKED'}
+                onComplete={onAuditComplete}
+                acknowledged={acknowledgedAudit === active.llm_audit?.id}
+                onAcknowledge={(checked) =>
+                  setAcknowledgedAudit(checked ? active.llm_audit?.id || '' : '')
+                }
+              />
+            )}
             {tab === 'overview' && (
               <>
                 <div className={`recommendation ${active.recommendation.outcome.toLowerCase()}`}>
@@ -408,7 +433,9 @@ export default function ReviewPanel({
                             ? 'Resolve the blockers and request fresh evidence.'
                             : expired
                               ? 'This recommendation expired. Queue a fresh review.'
-                              : 'Add a reason to keep the decision accountable.'}
+                              : !auditReady
+                                ? 'Inspect and acknowledge the LLM audit before approval.'
+                                : 'Add a reason to keep the decision accountable.'}
                     </small>
                   </div>
                 </div>
@@ -426,7 +453,11 @@ export default function ReviewPanel({
                   <button
                     className="button primary"
                     disabled={
-                      !canResolve || busy || active.recommendation.outcome === 'BLOCKED' || expired
+                      !canResolve ||
+                      busy ||
+                      active.recommendation.outcome === 'BLOCKED' ||
+                      expired ||
+                      !auditReady
                     }
                     onClick={() => {
                       onDecision('approve');

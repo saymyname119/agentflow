@@ -66,7 +66,7 @@ export default function ProductPage({ records, demo, loading, onOpenWorkspace }:
           <div className="hero-copy">
             <div className="product-kicker">
               <span />
-              GITHUB REVIEW AGENT <span className="kicker-version">/ v0.2</span>
+              GITHUB REVIEW AGENT <span className="kicker-version">/ v0.3</span>
             </div>
             <h1>
               Your next merge.

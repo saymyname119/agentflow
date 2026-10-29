@@ -253,6 +253,7 @@ export default function App() {
             action: modal,
             expected_revision: detail.revision,
             reason: reason.trim(),
+            expected_audit_id: detail.llm_audit?.id,
           }),
         });
       setModal(null);
@@ -799,6 +800,10 @@ export default function App() {
                     )}
                   </div>
                   <ReviewPanel
+                    token={token}
+                    onAuditComplete={() => {
+                      void refresh();
+                    }}
                     active={active}
                     selectedRow={selectedRow}
                     session={session}
@@ -825,7 +830,7 @@ export default function App() {
             </span>
             <span>
               Explainable recommendations<span>·</span>Human-owned decisions<span>·</span>
-              ApprovalFlow <code>v0.2</code>
+              ApprovalFlow <code>v0.3</code>
             </span>
           </footer>
         </main>

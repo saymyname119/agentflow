@@ -17,6 +17,9 @@ class Settings:
     github_token: str = ""
     github_write_enabled: bool = False
     demo_mode: bool = False
+    llm_audit_enabled: bool = False
+    openai_api_key: str = ""
+    llm_model: str = ""
 
     @classmethod
     def load(cls):
@@ -29,8 +32,13 @@ class Settings:
             policy=Policy.model_validate_json(Path(os.getenv("POLICY_FILE", "policy.json")).read_text()),
             github_token=os.getenv("GITHUB_TOKEN", ""),
             github_write_enabled=os.getenv("GITHUB_WRITE_ENABLED", "false").lower() == "true",
+            llm_audit_enabled=os.getenv("LLM_AUDIT_ENABLED", "false").lower() == "true",
+            openai_api_key=os.getenv("OPENAI_API_KEY", ""),
+            llm_model=os.getenv("LLM_MODEL", ""),
         )
         secrets = [settings.webhook_secret, settings.operator_token, *settings.reviewers.values()]
+        if settings.llm_audit_enabled and (not settings.openai_api_key or not settings.llm_model):
+            raise ValueError("Enabled LLM audit requires OPENAI_API_KEY and LLM_MODEL")
         if not settings.repositories or not settings.reviewers or any(len(s) < 32 for s in secrets):
             raise ValueError("Configure allowed repositories, reviewers and separate secrets of at least 32 characters")
         if len(secrets) != len(set(secrets)):

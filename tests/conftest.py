@@ -26,9 +26,9 @@ def snapshot():
 def store(tmp_path):
     instance = Store(os.getenv("TEST_DATABASE_URL", "sqlite:///" + (tmp_path / "test.db").as_posix()))
     if os.getenv("TEST_DATABASE_URL"):
-        from approvalflow.storage import audit, decisions, jobs, publications, review_heads
+        from approvalflow.storage import audit, decisions, jobs, publications, review_heads, llm_audits
         with instance.engine.begin() as db:
-            for table in (publications, audit, review_heads, decisions, jobs):
+            for table in (llm_audits, publications, audit, review_heads, decisions, jobs):
                 db.execute(table.delete())
     yield instance
     instance.engine.dispose()

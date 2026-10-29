@@ -67,13 +67,16 @@ function decision(id: string, number: number, outcome: 'READY' | 'REVIEW' | 'BLO
     publication: null,
   };
 }
-function server(options: { live?: boolean; stale?: boolean } = {}) {
+function server(
+  options: { live?: boolean; stale?: boolean; llm?: boolean; llmFailure?: boolean } = {},
+) {
   const rows = [
     decision('review', 142, 'REVIEW'),
     decision('ready', 143, 'READY'),
     decision('blocked', 144, 'BLOCKED'),
   ];
   const session: Session = {
+    llm_audit_enabled: options.llm,
     actor: 'reviewer',
     role: 'reviewer',
     repositories: ['team/service'],
@@ -111,6 +114,14 @@ function server(options: { live?: boolean; stale?: boolean } = {}) {
     if (path === '/reviews') return respond({ job_id: 'job1' }, 202);
     if (path === '/jobs/job1') return respond({ status: 'done', decision_id: 'review' });
     const row = rows.find((d) => path.startsWith(`/decisions/${d.id}`));
+    if (row && path.endsWith('/llm-audit')) {
+      if (options.llmFailure) {
+        row.llm_audit = { id: 'audit1', state: 'unavailable', report: null };
+        return respond({ detail: 'Audit unavailable; request a fresh review' }, 503);
+      }
+      row.llm_audit = { id: 'audit1', state: 'completed', report: { findings: [] } };
+      return respond(structuredClone(row.llm_audit));
+    }
     if (row && path.endsWith('/resolve')) {
       if (options.stale)
         return respond({ detail: 'Evidence or policy changed; request a fresh review' }, 409);
@@ -136,6 +147,48 @@ async function boot() {
   render(<App />);
   await screen.findByRole('heading', { name: 'Why this recommendation?' });
 }
+
+test('required LLM audit gates approval until the reviewer acknowledges its report', async () => {
+  const backend = server({ llm: true });
+  await boot();
+  const user = userEvent.setup();
+  expect(screen.getByRole('button', { name: 'Approve review' })).toBeDisabled();
+  await user.click(screen.getByRole('tab', { name: 'LLM audit' }));
+  await user.click(screen.getByRole('button', { name: 'Run LLM audit' }));
+  const checkbox = await screen.findByRole('checkbox', { name: /I inspected this audit/ });
+  expect(screen.getByRole('button', { name: 'Approve review' })).toBeDisabled();
+  await user.click(checkbox);
+  expect(screen.getByRole('button', { name: 'Approve review' })).toBeEnabled();
+  await user.click(screen.getByRole('button', { name: 'Approve review' }));
+  const dialog = screen.getByRole('dialog');
+  fireEvent.change(within(dialog).getByRole('textbox'), {
+    target: { value: 'Inspected model findings and verified changes' },
+  });
+  await user.click(within(dialog).getByRole('button', { name: 'Confirm approval' }));
+  await waitFor(() =>
+    expect(backend.calls.find((c) => c.path.endsWith('/resolve'))?.body.expected_audit_id).toBe(
+      'audit1',
+    ),
+  );
+});
+
+test('unavailable LLM audit remains visible and does not enable approval', async () => {
+  server({ llm: true, llmFailure: true });
+  await boot();
+  const user = userEvent.setup();
+  await user.click(screen.getByRole('tab', { name: 'LLM audit' }));
+  await user.click(screen.getByRole('button', { name: 'Run LLM audit' }));
+  await screen.findByText(/Audit unavailable. Approval remains blocked/);
+  expect(screen.getByRole('button', { name: 'Approve review' })).toBeDisabled();
+});
+
+test('disabled audit states its scope without offering an external request', async () => {
+  server();
+  await boot();
+  await userEvent.setup().click(screen.getByRole('tab', { name: 'LLM audit' }));
+  expect(screen.getByText(/External LLM audit is disabled/)).toBeVisible();
+  expect(screen.queryByRole('button', { name: 'Run LLM audit' })).not.toBeInTheDocument();
+});
 
 test('demo loads real-shaped evidence and distinguishes required human review', async () => {
   server();

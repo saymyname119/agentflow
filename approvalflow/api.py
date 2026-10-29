@@ -19,6 +19,7 @@ from .github import GitHub
 from .models import REPOSITORY_PATTERN, normalize_repository
 from .guardrails import GuardrailViolation, refresh_for_approval, require_reviewer
 from .storage import Store
+from .llm import LLMAuditor, audit_key
 
 
 class PullRequestRef(BaseModel):
@@ -35,6 +36,7 @@ class Resolution(BaseModel):
     action: Literal["approve", "reject"]
     expected_revision: int = Field(gt=0)
     reason: str = Field(min_length=10, max_length=2000)
+    expected_audit_id: str | None = None
 
     @field_validator("reason", mode="before")
     @classmethod
@@ -42,10 +44,22 @@ class Resolution(BaseModel):
         return value.strip() if isinstance(value, str) else value
 
 
-def create_app(settings: Settings | None = None, store=None, github=None):
+def create_app(settings: Settings | None = None, store=None, github=None, auditor=None):
     settings = settings or Settings.load()
     store = store or Store(settings.database_url)
     github = github or GitHub(settings.github_token)
+    llm_enabled = settings.llm_audit_enabled and not settings.demo_mode
+    llm_key = audit_key(settings.llm_model)
+    auditor = auditor or (LLMAuditor(settings.openai_api_key, settings.llm_model) if llm_enabled else None)
+
+    def require_audit(decision_id, expected_id=None):
+        if llm_enabled:
+            report = store.llm_audit(decision_id, llm_key)
+            if not report or report["state"] != "completed":
+                raise HTTPException(409, "A completed LLM audit is required before approval")
+            if expected_id is not None and report["id"] != expected_id:
+                raise HTTPException(409, "Audit changed; inspect the current report")
+            return report
 
     @asynccontextmanager
     async def lifespan(app):
@@ -65,7 +79,7 @@ def create_app(settings: Settings | None = None, store=None, github=None):
             github.client.close() if hasattr(github, "client") else None
             store.engine.dispose()
 
-    app = FastAPI(title="ApprovalFlow", version="0.2.0", lifespan=lifespan,
+    app = FastAPI(title="ApprovalFlow", version="0.3.0", lifespan=lifespan,
                   description="GitHub analysis and authenticated human sign-off. Optional explicit GitHub publication; never merges code.")
 
     @app.exception_handler(GuardrailViolation)
@@ -116,6 +130,7 @@ def create_app(settings: Settings | None = None, store=None, github=None):
     def session(actor=Depends(identity)):
         return {"actor": actor, "role": "operator" if actor == "operator" else "reviewer",
                 "repositories": sorted(settings.repositories), "demo": settings.demo_mode,
+                "llm_audit_enabled": llm_enabled,
                 "publication_enabled": settings.github_write_enabled, "policy": settings.policy.model_dump()}
 
     @app.post("/webhooks/github", status_code=202)
@@ -188,7 +203,30 @@ def create_app(settings: Settings | None = None, store=None, github=None):
     def get_decision(decision_id: str):
         decision = decision_or_404(decision_id)
         return {**decision, "is_current": store.is_current(decision_id),
+                "llm_audit": store.llm_audit(decision_id, llm_key) if llm_enabled else None,
                 "audit": store.events(decision_id), "publication": store.publication(decision_id)}
+
+    @app.post("/decisions/{decision_id}/llm-audit")
+    def run_llm_audit(decision_id: str, actor=Depends(identity)):
+        if not llm_enabled:
+            raise HTTPException(403, "LLM audit is disabled; configure it on the server")
+        decision = decision_or_404(decision_id)
+        require_reviewer(actor, decision["author"])
+        current = refresh_for_approval(decision, store, github, settings.policy)
+        existing = store.llm_audit(decision_id, llm_key)
+        if existing:
+            return existing
+        if not store.reserve_audit(decision_id, llm_key, actor):
+            raise HTTPException(409, "Audit already reserved or review superseded")
+        try:
+            report = auditor.audit(current)
+            # The model can take seconds; evidence and the current-review pointer may change.
+            refresh_for_approval(decision, store, github, settings.policy)
+        except Exception:
+            store.finish_audit(decision_id, llm_key, actor)
+            raise HTTPException(503, "Audit unavailable or evidence changed; request a fresh review before retrying")
+        store.finish_audit(decision_id, llm_key, actor, report)
+        return store.llm_audit(decision_id, llm_key)
 
     @app.post("/decisions/{decision_id}/resolve")
     def resolve(decision_id: str, resolution: Resolution, actor=Depends(identity)):
@@ -196,6 +234,9 @@ def create_app(settings: Settings | None = None, store=None, github=None):
         require_reviewer(actor, decision["author"])
         if resolution.action == "approve":
             refresh_for_approval(decision, store, github, settings.policy)
+            if llm_enabled and resolution.expected_audit_id is None:
+                raise HTTPException(409, "Inspect and acknowledge the completed LLM audit before approval")
+            require_audit(decision_id, resolution.expected_audit_id)
         if not store.resolve(decision_id, resolution.expected_revision, actor, resolution.action, resolution.reason):
             raise HTTPException(409, "Decision superseded, already resolved or revision changed")
         return {"resolution": resolution.action, "revision": resolution.expected_revision + 1,
@@ -216,6 +257,7 @@ def create_app(settings: Settings | None = None, store=None, github=None):
             raise HTTPException(409, "Publication is in progress or uncertain; inspect GitHub before any further submission")
         require_reviewer(actor, decision["author"])
         current = refresh_for_approval(decision, store, github, settings.policy)
+        require_audit(decision_id)
         if not store.reserve_publication(decision_id):
             raise HTTPException(409, "Decision superseded or another request already reserved this publication")
         try:

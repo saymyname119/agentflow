@@ -821,3 +821,19 @@
 .app-shell .modal textarea {
   color: #70577f;
 }
+.llm-audit p {
+  margin: 12px 0;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.llm-audit label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin-top: 20px;
+  line-height: 1.5;
+}
+.llm-audit input[type='checkbox'] {
+  margin-top: 5px;
+  accent-color: #7357d8;
+}
