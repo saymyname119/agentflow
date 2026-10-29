@@ -1,5 +1,5 @@
 {
-  "verified_at": "2026-10-29T06:42:44.180473+00:00",
+  "verified_at": "2026-10-29T07:07:27.129638+00:00",
   "version": "0.3.0",
   "python": "3.12.14",
   "suites": {
@@ -7,15 +7,15 @@
       "errors": "0",
       "failures": "0",
       "skipped": "0",
-      "tests": "171",
-      "time": "21.915"
+      "tests": "189",
+      "time": "11.280"
     },
     "postgres": {
-      "tests": "171",
+      "tests": "189",
       "failures": "0",
       "errors": "0",
       "skipped": "0",
-      "scope": "GitHub Actions PostgreSQL job for commit 93c2231"
+      "scope": "GitHub Actions PostgreSQL job for setup commit 1943b8c"
     }
   },
   "frontend": {
@@ -46,9 +46,9 @@
     "live_github_writes": 0
   },
   "remote_ci": {
-    "guardrails_commit": "93c2231cd4cb9ea038c033ce67d22a4bdeacfa67",
+    "verified_commit": "1943b8c150aafa807ab7d0ad0deaa8ce431a3f1e",
     "conclusion": "success",
-    "url": "https://github.com/saymyname119/agentflow/actions/runs/40810463881"
+    "url": "https://github.com/saymyname119/agentflow/actions/runs/40833173859"
   },
   "prior_native_postgres": {
     "errors": "0",
@@ -64,5 +64,14 @@
     "live_model_call": false,
     "quality_benchmark": false,
     "enabled_by_default": false
+  },
+  "setup": {
+    "tests": 18,
+    "demo_command": "python start.py",
+    "sandbox_command": "python start.py --sandbox",
+    "dependency_prepare_and_build": "passed locally",
+    "http_smoke": "health ok, homepage 200, eight demo recommendations",
+    "shutdown": "Ctrl+C completed application shutdown",
+    "live_webhook_delivery": "requires user sandbox credentials; not executed"
   }
 }

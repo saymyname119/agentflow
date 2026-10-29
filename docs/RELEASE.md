@@ -35,3 +35,5 @@ Verification: 171 backend tests, 16 frontend tests, formatting and production bu
 `python start.py` now prepares dependencies, builds the frontend and runs the demo. `python start.py --sandbox` provides guided real-repository configuration, generated local credentials, selection of observed trusted CI producers, a queued example PR, an integrated worker and optional pinned Smee forwarding. Configuration is ignored by Git; the GitHub token is not saved. Application credentials are excluded from the forwarder environment. Both external model calls and GitHub publication remain disabled in guided sandbox mode.
 
 Verified locally: dependency preparation/build, cached relaunch, actual demo HTTP health/homepage/eight recommendations and Ctrl+C shutdown. Real credentialed webhook delivery still needs a user-supplied sandbox/token/channel. See SETUP.md for the shortened workflow.
+
+Setup release verification: 189 backend tests and the existing 16 frontend tests passed; remote SQLite/PostgreSQL and frontend jobs are green: https://github.com/saymyname119/agentflow/actions/runs/40833173859.
