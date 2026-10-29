@@ -3,6 +3,7 @@ import time
 from sqlalchemy.exc import SQLAlchemyError
 
 from .policy import evaluate
+from .guardrails import require_matching_evidence
 
 log = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ def process_one(store, github, policy):
     started = time.perf_counter()
     try:
         snapshot = github.snapshot(job["repository"], job["number"])
+        require_matching_evidence(snapshot, job["repository"], job["number"])
         recommendation = evaluate(snapshot, policy)
         decision_id = store.complete(job, snapshot, recommendation, policy)
         if decision_id is None:

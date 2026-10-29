@@ -12,6 +12,8 @@ The product overview introduces the workflow and its measured results. **Open re
 
 **Small architecture:** one service, one worker from the same package, one database. No Redis, vector database, microservices or agent framework.
 
+See [the approval guardrail system](docs/GUARDRAILS.md) for the enforced input, evidence, policy, identity, freshness, concurrency and publication boundaries, plus requirements for a future advisory LLM audit.
+
 ## Open the working demo
 
 The creation environment is ready to run. From this directory:

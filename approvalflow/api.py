@@ -1,7 +1,6 @@
 import hashlib
 import hmac
 import json
-import time
 import asyncio
 from contextlib import asynccontextmanager, suppress
 from pathlib import Path
@@ -11,14 +10,15 @@ from fastapi import Depends, FastAPI, Header, HTTPException, Request
 from pydantic import BaseModel, Field, ValidationError, field_validator
 from starlette.concurrency import run_in_threadpool
 from fastapi.responses import FileResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from sqlalchemy.exc import SQLAlchemyError
 
 from .config import Settings
 from .github import GitHub
 from .models import REPOSITORY_PATTERN, normalize_repository
-from .policy import evaluate
-from .storage import Store, fingerprint
+from .guardrails import GuardrailViolation, refresh_for_approval, require_reviewer
+from .storage import Store
 
 
 class PullRequestRef(BaseModel):
@@ -68,6 +68,10 @@ def create_app(settings: Settings | None = None, store=None, github=None):
     app = FastAPI(title="ApprovalFlow", version="0.2.0", lifespan=lifespan,
                   description="GitHub analysis and authenticated human sign-off. Optional explicit GitHub publication; never merges code.")
 
+    @app.exception_handler(GuardrailViolation)
+    async def guardrail_violation(request, exc):
+        return JSONResponse(status_code=exc.status_code, content={"detail": str(exc)})
+
     def identity(authorization: str = Header(default="")):
         token = authorization.removeprefix("Bearer ") if authorization.startswith("Bearer ") else ""
         for name, secret in settings.reviewers.items():
@@ -91,21 +95,6 @@ def create_app(settings: Settings | None = None, store=None, github=None):
             raise HTTPException(404, "Decision not found")
         allowed(decision["repository"])
         return decision
-
-    def refresh_for_approval(decision):
-        if not store.is_current(decision["id"]):
-            raise HTTPException(409, "A newer review supersedes this recommendation")
-        if time.time() - decision["created_at"] > 3600:
-            raise HTTPException(409, "Recommendation expired; request a fresh review")
-        try:
-            current = github.snapshot(decision["repository"], decision["number"])
-        except Exception:
-            raise HTTPException(503, "Could not refresh GitHub evidence; retry later")
-        if fingerprint(current, settings.policy) != decision["fingerprint"]:
-            raise HTTPException(409, "Evidence or policy changed; request a fresh review")
-        if evaluate(current, settings.policy).outcome == "BLOCKED":
-            raise HTTPException(409, "Required safety checks are blocked")
-        return current
 
     @app.get("/health")
     def health():
@@ -203,13 +192,10 @@ def create_app(settings: Settings | None = None, store=None, github=None):
 
     @app.post("/decisions/{decision_id}/resolve")
     def resolve(decision_id: str, resolution: Resolution, actor=Depends(identity)):
-        if actor == "operator":
-            raise HTTPException(403, "Named reviewer required")
         decision = decision_or_404(decision_id)
-        if actor.lower() == decision["author"].lower():
-            raise HTTPException(403, "Authors cannot resolve their own changes")
+        require_reviewer(actor, decision["author"])
         if resolution.action == "approve":
-            refresh_for_approval(decision)
+            refresh_for_approval(decision, store, github, settings.policy)
         if not store.resolve(decision_id, resolution.expected_revision, actor, resolution.action, resolution.reason):
             raise HTTPException(409, "Decision superseded, already resolved or revision changed")
         return {"resolution": resolution.action, "revision": resolution.expected_revision + 1,
@@ -228,7 +214,8 @@ def create_app(settings: Settings | None = None, store=None, github=None):
             if existing["state"] == "published":
                 return existing
             raise HTTPException(409, "Publication is in progress or uncertain; inspect GitHub before any further submission")
-        current = refresh_for_approval(decision)
+        require_reviewer(actor, decision["author"])
+        current = refresh_for_approval(decision, store, github, settings.policy)
         if not store.reserve_publication(decision_id):
             raise HTTPException(409, "Decision superseded or another request already reserved this publication")
         try:
