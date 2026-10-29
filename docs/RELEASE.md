@@ -29,3 +29,9 @@ Implemented on 29 October 2026: fixed-origin OpenAI Responses adapter, strict st
 The default demo still makes no external model calls. Live mode requires an API key and a chosen model available to that account; see LLM_AUDIT.md. Adapter tests use simulated provider responses and do not establish model accuracy. Deployment and live credentialed integration remain operational acceptance steps, not completed claims.
 
 Verification: 171 backend tests, 16 frontend tests, formatting and production build passed. Remote frontend, SQLite and PostgreSQL jobs passed for `93c2231`: https://github.com/saymyname119/agentflow/actions/runs/40810463881. No live model call or live GitHub approval was performed.
+
+## Simplified setup
+
+`python start.py` now prepares dependencies, builds the frontend and runs the demo. `python start.py --sandbox` provides guided real-repository configuration, generated local credentials, selection of observed trusted CI producers, a queued example PR, an integrated worker and optional pinned Smee forwarding. Configuration is ignored by Git; the GitHub token is not saved. Application credentials are excluded from the forwarder environment. Both external model calls and GitHub publication remain disabled in guided sandbox mode.
+
+Verified locally: dependency preparation/build, cached relaunch, actual demo HTTP health/homepage/eight recommendations and Ctrl+C shutdown. Real credentialed webhook delivery still needs a user-supplied sandbox/token/channel. See SETUP.md for the shortened workflow.

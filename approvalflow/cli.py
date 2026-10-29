@@ -15,7 +15,11 @@ def main():
     demo.add_argument("snapshot")
     demo.add_argument("--policy", default="policy.json")
     commands.add_parser("serve")
-    commands.add_parser("demo", help="Start the isolated fixture-backed web demo without credentials")
+    local_demo = commands.add_parser("demo", help="Start the isolated fixture-backed web demo without credentials")
+    local_demo.add_argument("--port", type=int, default=8000)
+    sandbox = commands.add_parser("sandbox", help="Guided GitHub setup with an integrated worker and webhook forwarding")
+    sandbox.add_argument("--port", type=int, default=8000)
+    sandbox.add_argument("--reset", action="store_true")
     worker = commands.add_parser("worker")
     worker.add_argument("--once", action="store_true")
     args = parser.parse_args()
@@ -29,7 +33,10 @@ def main():
         uvicorn.run("approvalflow.api:create_app", factory=True, host="0.0.0.0", port=8000)
     elif args.command == "demo":
         import uvicorn
-        uvicorn.run("approvalflow.demo:create_demo_app", factory=True, host="127.0.0.1", port=8000)
+        uvicorn.run("approvalflow.demo:create_demo_app", factory=True, host="127.0.0.1", port=args.port)
+    elif args.command == "sandbox":
+        from .sandbox import launch
+        launch(args.port, args.reset)
     else:
         from .config import Settings
         from .github import GitHub

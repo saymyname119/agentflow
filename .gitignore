@@ -8,6 +8,7 @@ __pycache__/
 .test-tmp/
 evaluation/test-results*.xml
 .demo/
+.local/
 frontend/node_modules/
 frontend/dist/
 frontend/coverage/

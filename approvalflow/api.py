@@ -44,7 +44,7 @@ class Resolution(BaseModel):
         return value.strip() if isinstance(value, str) else value
 
 
-def create_app(settings: Settings | None = None, store=None, github=None, auditor=None):
+def create_app(settings: Settings | None = None, store=None, github=None, auditor=None, run_worker=False):
     settings = settings or Settings.load()
     store = store or Store(settings.database_url)
     github = github or GitHub(settings.github_token)
@@ -68,7 +68,7 @@ def create_app(settings: Settings | None = None, store=None, github=None, audito
             while True:
                 await run_in_threadpool(process_one, store, github, settings.policy)
                 await asyncio.sleep(.5)
-        task = asyncio.create_task(demo_worker()) if settings.demo_mode else None
+        task = asyncio.create_task(demo_worker()) if settings.demo_mode or run_worker else None
         try:
             yield
         finally:

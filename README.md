@@ -6,6 +6,24 @@ An explainable GitHub pull-request approval agent built with **React, TypeScript
 
 See the [phased release record](docs/RELEASE.md) for verified results and remaining deployment boundaries.
 
+## Start here
+
+Install **Python 3.11+** and **Node.js 22.12+**, open a terminal in this repository, then run:
+
+```powershell
+python start.py
+```
+
+The launcher installs missing dependencies, builds the UI, and starts the credential-free demo. Open **http://127.0.0.1:8000** and choose **Open review workspace**. Later launches reuse the installed environment and unchanged build. Press **Ctrl+C** to stop. No GitHub account, database server, Docker or API key is needed for this path.
+
+To try real GitHub pull requests instead:
+
+```powershell
+python start.py --sandbox
+```
+
+The wizard generates local secrets, lets you select a trusted CI check from an existing PR, saves the configuration, and starts the API and worker together. A GitHub token is entered privately and is not saved. Paste a Smee channel URL to start webhook forwarding from the same command, or press Enter to try manual review requests first. You still add the webhook once in GitHub. See [the short sandbox guide](docs/SETUP.md).
+
 The React console includes a searchable review inbox, commit-bound CI evidence, risk explanations, file metadata, reason-required decisions, activity history, a trusted-policy view, and a page explaining the measured results. A fixture-backed demo runs the real policy, database and decision code without GitHub credentials.
 
 ![ApprovalFlow product overview](docs/product-overview.png)
@@ -20,17 +38,17 @@ See [the approval guardrail system](docs/GUARDRAILS.md) for the input, evidence,
 
 ## Open the working demo
 
-The creation environment is ready to run. From this directory:
+From this directory:
 
 ```powershell
-..\.venv\Scripts\python.exe -m approvalflow.cli demo
+python start.py
 ```
 
 Open **http://127.0.0.1:8000** and choose **Open review workspace**. The demo signs in automatically as a sample reviewer. Approve or reject a review with a reason, then inspect its Activity tab. Use the account menu to switch to sample operator access and queue PR #142–#149. Switch back to reviewer access to decide on the fresh recommendation.
 
 This is a local demo, not a deployed GitHub integration. Every restart creates a separate SQLite fixture database under ignored `.demo/`. Demo credentials authorize only that demo service; publication is disabled even if the live-mode environment enables it. No real GitHub requests are made. To start over, stop the server and run the command again.
 
-For a fresh checkout, follow setup below. See [the three-minute walkthrough](docs/DEMO.md) for an interview demonstration and the design decisions worth discussing.
+The launcher handles fresh checkouts too. See [the three-minute walkthrough](docs/DEMO.md) for an interview demonstration and the design decisions worth discussing.
 
 ## What works
 
@@ -56,12 +74,11 @@ Set `LLM_AUDIT_ENABLED=true`, `OPENAI_API_KEY` and `LLM_MODEL` in the server env
 
 This sends the PR diff to OpenAI. Enable it only for authorized code. The adapter sets `store=false`, sends no tools, has a 60 KB input budget and 2,500 output-token cap, and permits one paid attempt per recommendation/configuration. Failures and interrupted requests require a fresh recommendation; there is no automatic retry. Configure provider spend limits separately. See [LLM audit setup, scope and tests](docs/LLM_AUDIT.md). No live model call or independent quality benchmark has been performed.
 
-## Try it without credentials
+## Developer commands
 
-From this directory, using Python 3.11+ and Node 22.12+:
+The launcher is sufficient to try the app. For development and tests, use the environment it creates (Windows commands below):
 
 ```powershell
-python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -e '.[test]'
 cd frontend
 npm ci
@@ -83,6 +100,8 @@ The sample prints a `READY` recommendation with the policy version and reason. T
 The production frontend build is served by FastAPI, so you do not need a second server. Full integration tests expect that build to exist. For frontend development, run `npm run dev` from `frontend/` alongside the API/demo on port 8000; Vite proxies the application endpoints to the local service.
 
 ## Run with GitHub
+
+For a local sandbox, use `python start.py --sandbox`; it replaces the manual environment and multi-terminal setup below. The following instructions are for independently managed API/worker deployments.
 
 1. Configure `policy.json` **on the server**, not from a pull request. Replace the example required check `test` and app ID `15368` with the exact checks and producer IDs observed in your repository. Matrix jobs may have names such as `test (sqlite)` and `test (postgres)`; list each required job separately.
 2. Generate separate secrets using `python -c "import secrets; print(secrets.token_hex(32))"`. Configure the variables from `.env.example`. Native commands read exported environment variables; they do not load `.env` automatically.
